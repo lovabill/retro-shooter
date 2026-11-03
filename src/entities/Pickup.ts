@@ -19,6 +19,7 @@ export class Pickup extends Phaser.Physics.Arcade.Sprite {
 
   public spawn(x: number, y: number, type: PickupType, creditValue: number = 10): void {
     this.setPosition(x, y);
+    this.setDepth(7);
     this.setActive(true);
     this.setVisible(true);
     this.body!.enable = true;

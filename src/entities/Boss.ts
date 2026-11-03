@@ -39,6 +39,7 @@ export class Boss extends Phaser.Physics.Arcade.Sprite {
 
     this.setTexture(textureMap[bossType]);
     this.setPosition(240, -100);
+    this.setDepth(9);
     this.setActive(true);
     this.setVisible(true);
     this.body!.enable = true;

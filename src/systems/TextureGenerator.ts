@@ -788,29 +788,247 @@ export class TextureGenerator {
       ctx.fill();
     });
 
-    // C) Biomechanical Xenon Terrain Layer (480x640)
-    createCanvas('bg_biomech', 480, 640, (ctx, w, h) => {
+    // 16. DETAILED VERTICAL SCROLLING TERRAIN GRAPHICS (Xenon 2 & Tyrian Style)
+    // A) Level 1: Orbital Industrial Trench & Space Station Plating (480x640 Tileable)
+    createCanvas('bg_trench_orbital', 480, 640, (ctx, w, h) => {
       ctx.clearRect(0, 0, w, h);
-      ctx.strokeStyle = 'rgba(40, 65, 80, 0.45)';
-      ctx.lineWidth = 2;
 
-      // Draw scrolling organic tech rib cages and conduits on the sides
-      // Left border conduits
-      for (let y = 0; y < h; y += 40) {
-        ctx.strokeRect(0, y, 36, 32);
-        ctx.fillStyle = 'rgba(25, 40, 50, 0.5)';
-        ctx.fillRect(2, y + 2, 32, 28);
-        ctx.fillStyle = 'rgba(0, 240, 255, 0.4)';
-        ctx.fillRect(32, y + 14, 4, 4); // glowing terminal node
+      // Center corridor floor panels (semi-transparent so Planet Tyria is visible beneath)
+      ctx.fillStyle = 'rgba(12, 18, 28, 0.4)';
+      ctx.fillRect(70, 0, 340, h);
+
+      // Central energy rail line
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(240, 0); ctx.lineTo(240, h);
+      ctx.stroke();
+
+      // Transverse floor girders
+      for (let y = 0; y < h; y += 80) {
+        ctx.fillStyle = 'rgba(20, 32, 48, 0.5)';
+        ctx.fillRect(70, y, 340, 16);
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.6)';
+        ctx.fillRect(236, y + 4, 8, 8); // energy node
       }
 
-      // Right border conduits
-      for (let y = 20; y < h; y += 40) {
-        ctx.strokeRect(w - 36, y, 36, 32);
-        ctx.fillStyle = 'rgba(25, 40, 50, 0.5)';
-        ctx.fillRect(w - 34, y + 2, 32, 28);
-        ctx.fillStyle = 'rgba(255, 80, 0, 0.4)';
-        ctx.fillRect(w - 36, y + 14, 4, 4);
+      // LEFT WALL (0 to 72px): Heavy steel plates & industrial conduits
+      for (let y = 0; y < h; y += 40) {
+        // Base plate
+        ctx.fillStyle = (y / 40) % 2 === 0 ? '#1e2838' : '#16202e';
+        ctx.fillRect(0, y, 68, 38);
+        ctx.strokeStyle = '#2d3d54';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, y, 68, 38);
+
+        // Armor plate bevel highlight
+        ctx.fillStyle = '#3a4e6b';
+        ctx.fillRect(0, y, 68, 3);
+        ctx.fillStyle = '#0a1018';
+        ctx.fillRect(0, y + 35, 68, 3);
+
+        // Rivets
+        ctx.fillStyle = '#7a92b3';
+        ctx.fillRect(8, y + 8, 3, 3);
+        ctx.fillRect(8, y + 26, 3, 3);
+        ctx.fillRect(56, y + 8, 3, 3);
+        ctx.fillRect(56, y + 26, 3, 3);
+
+        // Warning hazard stripes every 120px
+        if (y % 120 === 0) {
+          ctx.fillStyle = '#ffd700';
+          ctx.fillRect(24, y + 10, 24, 18);
+          ctx.fillStyle = '#000000';
+          ctx.beginPath();
+          ctx.moveTo(28, y + 10); ctx.lineTo(34, y + 10); ctx.lineTo(28, y + 28); ctx.closePath(); ctx.fill();
+          ctx.moveTo(38, y + 10); ctx.lineTo(44, y + 10); ctx.lineTo(38, y + 28); ctx.closePath(); ctx.fill();
+        }
+
+        // Cyan glowing power conduit line on wall lip
+        ctx.fillStyle = '#00f0ff';
+        ctx.fillRect(66, y + 4, 3, 30);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(67, y + 14, 1, 10);
+      }
+
+      // RIGHT WALL (408 to 480px): Mirrored heavy steel plates & industrial conduits
+      for (let y = 0; y < h; y += 40) {
+        ctx.fillStyle = (y / 40) % 2 === 0 ? '#1e2838' : '#16202e';
+        ctx.fillRect(412, y, 68, 38);
+        ctx.strokeStyle = '#2d3d54';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(412, y, 68, 38);
+
+        ctx.fillStyle = '#3a4e6b';
+        ctx.fillRect(412, y, 68, 3);
+        ctx.fillStyle = '#0a1018';
+        ctx.fillRect(412, y + 35, 68, 3);
+
+        ctx.fillStyle = '#7a92b3';
+        ctx.fillRect(420, y + 8, 3, 3);
+        ctx.fillRect(420, y + 26, 3, 3);
+        ctx.fillRect(468, y + 8, 3, 3);
+        ctx.fillRect(468, y + 26, 3, 3);
+
+        if (y % 120 === 40) {
+          ctx.fillStyle = '#ffd700';
+          ctx.fillRect(432, y + 10, 24, 18);
+          ctx.fillStyle = '#000000';
+          ctx.beginPath();
+          ctx.moveTo(436, y + 10); ctx.lineTo(442, y + 10); ctx.lineTo(436, y + 28); ctx.closePath(); ctx.fill();
+          ctx.moveTo(446, y + 10); ctx.lineTo(452, y + 10); ctx.lineTo(446, y + 28); ctx.closePath(); ctx.fill();
+        }
+
+        ctx.fillStyle = '#00f0ff';
+        ctx.fillRect(411, y + 4, 3, 30);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(412, y + 14, 1, 10);
+      }
+    });
+
+    // B) Level 2: Xenon 2 Bio-Chitin Alien Hive Trench (480x640 Tileable)
+    createCanvas('bg_trench_hive', 480, 640, (ctx, w, h) => {
+      ctx.clearRect(0, 0, w, h);
+
+      // Hive corridor floor (dark organic amber/purple mesh)
+      ctx.fillStyle = 'rgba(25, 12, 35, 0.6)';
+      ctx.fillRect(75, 0, 330, h);
+
+      // Bio-veins along the corridor floor
+      ctx.strokeStyle = 'rgba(131, 56, 236, 0.4)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let y = 0; y < h; y += 40) {
+        const xOffset = Math.sin(y * 0.05) * 45;
+        if (y === 0) ctx.moveTo(240 + xOffset, y);
+        else ctx.lineTo(240 + xOffset, y);
+      }
+      ctx.stroke();
+
+      // LEFT BIO-WALL (0 to 78px): Alien vertebrae ribs & toxic sacs (True Xenon 2 feel!)
+      for (let y = 0; y < h; y += 40) {
+        // Dark purple organic chitin base
+        ctx.fillStyle = (y / 40) % 2 === 0 ? '#261438' : '#1c0d2b';
+        ctx.fillRect(0, y, 75, 40);
+
+        // Curved skeletal ribs protruding into corridor
+        ctx.fillStyle = '#6b5282';
+        ctx.beginPath();
+        ctx.moveTo(0, y + 10);
+        ctx.quadraticCurveTo(55, y + 8, 76, y + 22);
+        ctx.quadraticCurveTo(50, y + 34, 0, y + 30);
+        ctx.closePath();
+        ctx.fill();
+
+        // Rib highlights
+        ctx.strokeStyle = '#a48abf';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Pulsating toxic emerald/purple egg pustules
+        ctx.fillStyle = '#00ff88';
+        ctx.beginPath();
+        ctx.arc(32, y + 20, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(30, y + 18, 2, 2);
+      }
+
+      // RIGHT BIO-WALL (402 to 480px): Mirrored alien ribs & toxic pustules
+      for (let y = 0; y < h; y += 40) {
+        ctx.fillStyle = (y / 40) % 2 === 0 ? '#261438' : '#1c0d2b';
+        ctx.fillRect(405, y, 75, 40);
+
+        ctx.fillStyle = '#6b5282';
+        ctx.beginPath();
+        ctx.moveTo(480, y + 10);
+        ctx.quadraticCurveTo(425, y + 8, 404, y + 22);
+        ctx.quadraticCurveTo(430, y + 34, 480, y + 30);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = '#a48abf';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ff007f';
+        ctx.beginPath();
+        ctx.arc(448, y + 20, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(446, y + 18, 2, 2);
+      }
+    });
+
+    // C) Level 3: Megablast Omega Citadel Fortress Trench (480x640 Tileable)
+    createCanvas('bg_trench_citadel', 480, 640, (ctx, w, h) => {
+      ctx.clearRect(0, 0, w, h);
+
+      // Dreadnought dark obsidian flight deck
+      ctx.fillStyle = 'rgba(15, 10, 18, 0.7)';
+      ctx.fillRect(80, 0, 320, h);
+
+      // Red reactor coolant conduit lines
+      ctx.strokeStyle = 'rgba(255, 30, 60, 0.4)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(180, 0); ctx.lineTo(180, h);
+      ctx.moveTo(300, 0); ctx.lineTo(300, h);
+      ctx.stroke();
+
+      // LEFT FORTRESS CITADEL WALL (0 to 80px): Heavy sloped armor plating & plasma nodes
+      for (let y = 0; y < h; y += 40) {
+        ctx.fillStyle = (y / 40) % 2 === 0 ? '#1b1c24' : '#12131a';
+        ctx.fillRect(0, y, 78, 38);
+        ctx.strokeStyle = '#353847';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, y, 78, 38);
+
+        // Armor chamfer bevels
+        ctx.fillStyle = '#4f536b';
+        ctx.fillRect(0, y, 78, 3);
+        ctx.fillStyle = '#08080c';
+        ctx.fillRect(0, y + 35, 78, 3);
+
+        // Crimson heat radiator vents
+        ctx.fillStyle = '#ff1744';
+        for (let v = 0; v < 3; v++) {
+          ctx.fillRect(14 + v * 16, y + 10, 8, 18);
+        }
+
+        // Plasma emitter node on the edge
+        ctx.fillStyle = '#ff5500';
+        ctx.beginPath();
+        ctx.arc(76, y + 19, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffaa';
+        ctx.fillRect(74, y + 18, 2, 2);
+      }
+
+      // RIGHT FORTRESS CITADEL WALL (400 to 480px): Mirrored heavy armored ramparts
+      for (let y = 0; y < h; y += 40) {
+        ctx.fillStyle = (y / 40) % 2 === 0 ? '#1b1c24' : '#12131a';
+        ctx.fillRect(402, y, 78, 38);
+        ctx.strokeStyle = '#353847';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(402, y, 78, 38);
+
+        ctx.fillStyle = '#4f536b';
+        ctx.fillRect(402, y, 78, 3);
+        ctx.fillStyle = '#08080c';
+        ctx.fillRect(402, y + 35, 78, 3);
+
+        ctx.fillStyle = '#ff1744';
+        for (let v = 0; v < 3; v++) {
+          ctx.fillRect(418 + v * 16, y + 10, 8, 18);
+        }
+
+        ctx.fillStyle = '#ff5500';
+        ctx.beginPath();
+        ctx.arc(404, y + 19, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffaa';
+        ctx.fillRect(404, y + 18, 2, 2);
       }
     });
   }

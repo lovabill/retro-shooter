@@ -23,7 +23,7 @@ export class GameScene extends Phaser.Scene {
   // Background layers
   private bgStars!: Phaser.GameObjects.TileSprite;
   private bgNebula!: Phaser.GameObjects.TileSprite;
-  private bgBiomech!: Phaser.GameObjects.TileSprite;
+  private bgTrench!: Phaser.GameObjects.TileSprite;
   private planetSprite?: Phaser.GameObjects.Sprite;
   private bgClouds?: Phaser.GameObjects.TileSprite;
 
@@ -137,9 +137,15 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.bgNebula = this.add.tileSprite(240, 320, 480, 640, 'bg_nebula');
-    this.bgNebula.setAlpha(0.65);
-    this.bgBiomech = this.add.tileSprite(240, 320, 480, 640, 'bg_biomech');
-    this.bgBiomech.setAlpha(0.7);
+    this.bgNebula.setAlpha(0.55);
+
+    // Level-specific authentic scrolling terrain (Xenon 2 / Tyrian style)
+    const terrainTex = this.currentLevelIndex === 1
+      ? 'bg_trench_orbital'
+      : (this.currentLevelIndex === 2 ? 'bg_trench_hive' : 'bg_trench_citadel');
+
+    this.bgTrench = this.add.tileSprite(240, 320, 480, 640, terrainTex);
+    this.bgTrench.setDepth(1);
 
     // 2. Physics Groups
     this.enemies = this.add.group({
@@ -379,7 +385,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.bgNebula.tilePositionY -= 1.1 * scroll;
-    this.bgBiomech.tilePositionY -= 1.6 * scroll;
+    this.bgTrench.tilePositionY -= 2.0 * scroll;
 
     // 2. Real-time Ship Systems update (Tyrian Mechanics!)
     const sysUpdate = this.shipSystem.update(deltaSec);

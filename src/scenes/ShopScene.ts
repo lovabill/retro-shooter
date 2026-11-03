@@ -9,6 +9,8 @@ export class ShopScene extends Phaser.Scene {
 
   private creditsText!: Phaser.GameObjects.Text;
   private shipPreview!: Phaser.GameObjects.Sprite;
+  private droneLPreview?: Phaser.GameObjects.Sprite;
+  private droneRPreview?: Phaser.GameObjects.Sprite;
   private contentContainer!: Phaser.GameObjects.Container;
   private currentTab: 'weapons' | 'defense' | 'generator' = 'weapons';
 
@@ -27,7 +29,7 @@ export class ShopScene extends Phaser.Scene {
 
     // Background
     this.add.rectangle(240, 320, 480, 640, 0x090c14);
-    this.add.tileSprite(240, 320, 480, 640, 'bg_biomech').setAlpha(0.25);
+    this.add.tileSprite(240, 320, 480, 640, 'bg_trench_orbital').setAlpha(0.2);
 
     // Top Header
     const topBar = this.add.rectangle(240, 24, 480, 48, 0x121724);
@@ -65,10 +67,19 @@ export class ShopScene extends Phaser.Scene {
     const cardBg = this.add.rectangle(240, 88, 456, 68, 0x111622);
     cardBg.setStrokeStyle(1, 0x223048);
 
+    // Ship Sprite Preview
     this.shipPreview = this.add.sprite(45, 88, 'player_ship').setScale(1.5);
 
     const stats = this.shipSystem.stats;
     const w = stats.weapons;
+
+    // Show drones flanking preview if bought
+    if (stats.hasWingman) {
+      if (this.droneLPreview) this.droneLPreview.destroy();
+      if (this.droneRPreview) this.droneRPreview.destroy();
+      this.droneLPreview = this.add.sprite(22, 88, 'drone_wingman').setScale(1.1);
+      this.droneRPreview = this.add.sprite(68, 88, 'drone_wingman').setScale(1.1);
+    }
 
     const cannonNames = ['Single Pulse', 'Twin Cannons', 'Triple Plasma', 'Quad Megablast'];
     const activeCannon = cannonNames[w.forwardCannonLevel - 1] || 'Cannons';
@@ -78,10 +89,10 @@ export class ShopScene extends Phaser.Scene {
     if (w.hasRearShots) mountedList.push(`Rear(Lv${w.rearShotLevel})`);
     if (w.hasHomingMissiles) mountedList.push(`Missiles(Lv${w.homingMissileLevel})`);
     if (w.hasLaserBeam) mountedList.push('Laser');
-    if (stats.hasWingman) mountedList.push('Drones');
+    if (stats.hasWingman) mountedList.push('2xDrones');
 
     const lines = [
-      `HULL: ${Math.ceil(stats.hull)}/${stats.maxHull} | SHIELD: ${Math.ceil(stats.shield)}/${stats.maxShield} | GEN: ${stats.generatorPower}MW`,
+      `HULL: ${Math.ceil(stats.hull)}/${stats.maxHull} | SHIELD: ${Math.ceil(stats.shield)}/${stats.maxShield} | SPD: ${this.shipSystem.getPlayerSpeed()}px/s`,
       `ALL WEAPONS FIRE SIMULTANEOUSLY:`,
       `[ ${mountedList.join(' + ')} ]`
     ];
@@ -99,8 +110,8 @@ export class ShopScene extends Phaser.Scene {
   private createTabButtons(): void {
     const tabs: { key: 'weapons' | 'defense' | 'generator'; label: string; x: number }[] = [
       { key: 'weapons', label: '1. XENON WEAPONS', x: 95 },
-      { key: 'defense', label: '2. DEFENSE', x: 240 },
-      { key: 'generator', label: '3. REACTOR', x: 385 }
+      { key: 'defense', label: '2. DEFENSE & SPEED', x: 240 },
+      { key: 'generator', label: '3. REACTOR & POWER', x: 385 }
     ];
 
     tabs.forEach(tab => {
@@ -137,11 +148,11 @@ export class ShopScene extends Phaser.Scene {
     }
   }
 
-  // --- TAB 1: XENON 2 ADDITIVE WEAPONRY ---
+  // --- TAB 1: XENON 2 ADDITIVE WEAPONRY (Including Accompanying Drones!) ---
   private renderXenonWeaponsTab(): void {
     const stats = this.shipSystem.stats;
     const w = stats.weapons;
-    let y = 180;
+    let y = 175;
 
     // 1. Forward Cannons (Single -> Twin -> Triple -> Quad Megablast)
     const forwardCost = w.forwardCannonCost * w.forwardCannonLevel;
@@ -170,7 +181,24 @@ export class ShopScene extends Phaser.Scene {
     );
     y += 56;
 
-    // 2. Side Shots (Flank Cannons)
+    // 2. Accompanying Wingmen Support Drones (PROMINENT UPGRADE!)
+    const hasDrones = stats.hasWingman;
+    this.createShopItemRow(
+      y,
+      'ACCOMPANYING COMBAT DRONES (x2)',
+      'Twin escort drones orbiting your ship wings, firing forward lasers',
+      hasDrones ? 'EQUIPPED' : `¢ ${stats.wingmanCost}`,
+      !hasDrones && stats.credits >= stats.wingmanCost,
+      () => {
+        if (this.shipSystem.buyWingman()) {
+          this.soundFX.playShopBuy();
+          this.refreshAll();
+        }
+      }
+    );
+    y += 56;
+
+    // 3. Side Shots (Flank Cannons)
     const sideCost = !w.hasSideShots ? w.sideShotCost : Math.round(w.sideShotCost * 0.9);
     const isSideMax = w.hasSideShots && w.sideShotLevel >= w.maxSideShotLevel;
     const sideLabel = !w.hasSideShots
@@ -195,7 +223,7 @@ export class ShopScene extends Phaser.Scene {
     );
     y += 56;
 
-    // 3. Rear Shots (Aft Blaster)
+    // 4. Rear Shots (Aft Blaster)
     const rearCost = !w.hasRearShots ? w.rearShotCost : Math.round(w.rearShotCost * 0.9);
     const isRearMax = w.hasRearShots && w.rearShotLevel >= w.maxRearShotLevel;
     const rearLabel = !w.hasRearShots
@@ -220,7 +248,7 @@ export class ShopScene extends Phaser.Scene {
     );
     y += 56;
 
-    // 4. Homing Missiles Pod
+    // 5. Homing Missiles Pod
     const missileCost = !w.hasHomingMissiles ? w.homingMissileCost : Math.round(w.homingMissileCost * 0.9);
     const isMissileMax = w.hasHomingMissiles && w.homingMissileLevel >= w.maxHomingMissileLevel;
     const missileLabel = !w.hasHomingMissiles
@@ -245,7 +273,7 @@ export class ShopScene extends Phaser.Scene {
     );
     y += 56;
 
-    // 5. Piercing Laser Beam
+    // 6. Piercing Laser Beam
     this.createShopItemRow(
       y,
       'MOUNT HIGH-ENERGY LASER',
@@ -259,48 +287,12 @@ export class ShopScene extends Phaser.Scene {
         }
       }
     );
-    y += 56;
-
-    // 6. Global Power Booster (Nashwan Power)
-    const pCost = w.powerUpgradeCost * w.powerLevel;
-    const isPMax = w.powerLevel >= w.maxPowerLevel;
-    this.createShopItemRow(
-      y,
-      `NASHWAN POWER BOOST (Lv ${w.powerLevel}/${w.maxPowerLevel})`,
-      `Overcharges damage of ALL mounted weapons (+28% per level)`,
-      isPMax ? 'MAX POWER' : `¢ ${pCost}`,
-      !isPMax && stats.credits >= pCost,
-      () => {
-        if (this.shipSystem.upgradeWeaponPower()) {
-          this.soundFX.playShopBuy();
-          this.refreshAll();
-        }
-      }
-    );
-    y += 56;
-
-    // 7. Global Fire Rate Supercharger
-    const spdCost = w.fireRateUpgradeCost * w.fireRateLevel;
-    const isSpdMax = w.fireRateLevel >= w.maxFireRateLevel;
-    this.createShopItemRow(
-      y,
-      `RAPID FIRE SUPERCHARGER (Lv ${w.fireRateLevel}/${w.maxFireRateLevel})`,
-      `Accelerates cycling rate of ALL weapons simultaneously`,
-      isSpdMax ? 'MAX SPEED' : `¢ ${spdCost}`,
-      !isSpdMax && stats.credits >= spdCost,
-      () => {
-        if (this.shipSystem.upgradeWeaponFireRate()) {
-          this.soundFX.playShopBuy();
-          this.refreshAll();
-        }
-      }
-    );
   }
 
-  // --- TAB 2: DEFENSE ---
+  // --- TAB 2: DEFENSE & ENGINE SPEED ---
   private renderDefenseTab(): void {
     const stats = this.shipSystem.stats;
-    let y = 195;
+    let y = 185;
 
     // 1. Hull Repair
     const missingHull = stats.maxHull - stats.hull;
@@ -318,7 +310,7 @@ export class ShopScene extends Phaser.Scene {
         }
       }
     );
-    y += 75;
+    y += 68;
 
     // 2. Hull Capacity Upgrade
     const hullCost = stats.hullUpgradeCost * stats.hullLevel;
@@ -336,7 +328,7 @@ export class ShopScene extends Phaser.Scene {
         }
       }
     );
-    y += 75;
+    y += 68;
 
     // 3. Shield Capacity Upgrade
     const shieldCost = stats.shieldUpgradeCost * stats.shieldLevel;
@@ -354,7 +346,7 @@ export class ShopScene extends Phaser.Scene {
         }
       }
     );
-    y += 75;
+    y += 68;
 
     // 4. Shield Recharge Booster
     const rechCost = stats.shieldRechargeUpgradeCost * stats.shieldRechargeLevel;
@@ -372,7 +364,7 @@ export class ShopScene extends Phaser.Scene {
         }
       }
     );
-    y += 75;
+    y += 68;
 
     // 5. Engine Thruster Speed Upgrade
     const spdCost = stats.engineSpeedUpgradeCost * stats.engineSpeedLevel;
@@ -392,39 +384,40 @@ export class ShopScene extends Phaser.Scene {
     );
   }
 
-  // --- TAB 3: GENERATOR & AUXILIARY ---
+  // --- TAB 3: REACTOR & GLOBAL OVERCHARGES ---
   private renderGeneratorTab(): void {
     const stats = this.shipSystem.stats;
-    let y = 205;
+    const w = stats.weapons;
+    let y = 185;
 
     const genCost = stats.generatorUpgradeCost * stats.generatorLevel;
     const isGenMax = stats.generatorLevel >= stats.maxGeneratorLevel;
 
-    const infoBox = this.add.rectangle(240, y + 25, 456, 75, 0x161e2e);
+    const infoBox = this.add.rectangle(240, y + 22, 456, 65, 0x161e2e);
     infoBox.setStrokeStyle(1, 0x00e5ff);
     const infoTitle = this.add.text(240, y, `REACTOR CORE: ${stats.generatorName.toUpperCase()}`, {
       fontFamily: 'Courier New, monospace',
-      fontSize: '12px',
+      fontSize: '11px',
       color: '#ffaa00',
       fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    const infoDesc1 = this.add.text(240, y + 20, `CURRENT ENERGY OUTPUT: ${stats.generatorPower} MEGAWATTS`, {
+    const infoDesc1 = this.add.text(240, y + 18, `ENERGY FLOW: ${stats.generatorPower} MW | BUFFER: ${this.shipSystem.maxEnergy} UNITS`, {
       fontFamily: 'Courier New, monospace',
-      fontSize: '11px',
+      fontSize: '10px',
       color: '#ffffff'
     }).setOrigin(0.5);
 
-    const infoDesc2 = this.add.text(240, y + 42, 'The generator directly powers continuous shield regeneration.', {
+    const infoDesc2 = this.add.text(240, y + 36, 'Directly powers continuous shield recharge & weapons cooling.', {
       fontFamily: 'Courier New, monospace',
-      fontSize: '10px',
+      fontSize: '9px',
       color: '#8faac8'
     }).setOrigin(0.5);
 
     this.contentContainer.add([infoBox, infoTitle, infoDesc1, infoDesc2]);
-    y += 95;
+    y += 80;
 
-    // Generator Upgrade Row
+    // 1. Generator Upgrade Row
     this.createShopItemRow(
       y,
       `UPGRADE REACTOR (Tier ${stats.generatorLevel}/${stats.maxGeneratorLevel})`,
@@ -438,18 +431,37 @@ export class ShopScene extends Phaser.Scene {
         }
       }
     );
-    y += 85;
+    y += 68;
 
-    // Wingmen Escorts
-    const hasWingman = stats.hasWingman;
+    // 2. Global Power Booster (Nashwan Power)
+    const pCost = w.powerUpgradeCost * w.powerLevel;
+    const isPMax = w.powerLevel >= w.maxPowerLevel;
     this.createShopItemRow(
       y,
-      'SUPPORT WINGMEN ESCORTS',
-      'Dual autonomous combat drones flanking your ship with twin blasters',
-      hasWingman ? 'EQUIPPED' : `¢ ${stats.wingmanCost}`,
-      !hasWingman && stats.credits >= stats.wingmanCost,
+      `NASHWAN POWER BOOST (Lv ${w.powerLevel}/${w.maxPowerLevel})`,
+      `Overcharges damage of ALL mounted weapons (+28% per level)`,
+      isPMax ? 'MAX POWER' : `¢ ${pCost}`,
+      !isPMax && stats.credits >= pCost,
       () => {
-        if (this.shipSystem.buyWingman()) {
+        if (this.shipSystem.upgradeWeaponPower()) {
+          this.soundFX.playShopBuy();
+          this.refreshAll();
+        }
+      }
+    );
+    y += 68;
+
+    // 3. Global Fire Rate Supercharger
+    const spdCost = w.fireRateUpgradeCost * w.fireRateLevel;
+    const isSpdMax = w.fireRateLevel >= w.maxFireRateLevel;
+    this.createShopItemRow(
+      y,
+      `RAPID FIRE SUPERCHARGER (Lv ${w.fireRateLevel}/${w.maxFireRateLevel})`,
+      `Accelerates cycling rate of ALL weapons simultaneously`,
+      isSpdMax ? 'MAX SPEED' : `¢ ${spdCost}`,
+      !isSpdMax && stats.credits >= spdCost,
+      () => {
+        if (this.shipSystem.upgradeWeaponFireRate()) {
           this.soundFX.playShopBuy();
           this.refreshAll();
         }

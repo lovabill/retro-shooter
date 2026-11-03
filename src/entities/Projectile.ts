@@ -28,6 +28,7 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
     weaponType: string | null = null
   ): void {
     this.setPosition(x, y);
+    this.setDepth(12);
     this.setActive(true);
     this.setVisible(true);
     this.body!.enable = true;

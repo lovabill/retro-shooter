@@ -31,6 +31,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.currentHp = config.hp;
     this.maxHp = config.hp;
     this.setTexture(config.texture);
+    this.setDepth(8);
     this.setActive(true);
     this.setVisible(true);
     this.body!.enable = true;

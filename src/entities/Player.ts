@@ -50,6 +50,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.setCollideWorldBounds(true);
     (this.body as Phaser.Physics.Arcade.Body).setSize(20, 24).setOffset(6, 6);
+    this.setDepth(10);
 
     // Setup input keys
     if (scene.input.keyboard) {
@@ -91,7 +92,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.shipSystem.stats.hasWingman) {
       if (!this.leftWingman) {
         this.leftWingman = this.scene.add.sprite(this.x - 24, this.y + 6, 'drone_wingman');
+        this.leftWingman.setDepth(10);
         this.rightWingman = this.scene.add.sprite(this.x + 24, this.y + 6, 'drone_wingman');
+        this.rightWingman.setDepth(10);
       }
       this.leftWingman.setVisible(true);
       this.rightWingman?.setVisible(true);
