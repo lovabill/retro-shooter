@@ -20,12 +20,20 @@ export class GameScene extends Phaser.Scene {
   private pickups!: Phaser.GameObjects.Group;
   private boss: Boss | null = null;
 
-  // Background layers
+  // Background layers (procedural fallback)
   private bgStars!: Phaser.GameObjects.TileSprite;
-  private bgNebula!: Phaser.GameObjects.TileSprite;
-  private bgTrench!: Phaser.GameObjects.TileSprite;
+  private bgNebula?: Phaser.GameObjects.TileSprite;
+  private bgTrench?: Phaser.GameObjects.TileSprite;
   private planetSprite?: Phaser.GameObjects.Sprite;
   private bgClouds?: Phaser.GameObjects.TileSprite;
+
+  // Real parallax photo layers (Level 1 only, leapfrog scrolling)
+  private photoLayerHeight: number = 0;
+  private bgPhotoFarA?: Phaser.GameObjects.Image;
+  private bgPhotoFarB?: Phaser.GameObjects.Image;
+  private bgPhotoSurfA?: Phaser.GameObjects.Image;
+  private bgPhotoSurfB?: Phaser.GameObjects.Image;
+  private usingPhotoLayers: boolean = false;
 
   // Level flow
   private currentLevelIndex: number = 1;
@@ -123,29 +131,90 @@ export class GameScene extends Phaser.Scene {
     // Start background music
     this.soundFX.startMusic('battle');
 
-    // 1. Backgrounds
+    // 1. Backgrounds — depth order: stars(-1) → photo_far(0) → nebula(0.5) → photo_surface(1) → clouds(1.5) → trench(2)
     this.bgStars = this.add.tileSprite(240, 320, 480, 640, 'bg_stars');
+    this.bgStars.setDepth(-1);
 
-    // Tyrian Level 1: Flying above Planet Tyria
     if (this.currentLevelIndex === 1) {
-      this.planetSprite = this.add.sprite(220, 280, 'planet_tyria');
-      this.planetSprite.setScale(1.25);
-      this.planetSprite.setAlpha(0.9);
+      // --- LEVEL 1: REAL PARALLAX PHOTO LAYERS ---
+      const hasFar = this.textures.exists('bg_far_photo');
+      const hasSurf = this.textures.exists('bg_surface_photo');
 
-      this.bgClouds = this.add.tileSprite(240, 320, 480, 640, 'bg_clouds');
-      this.bgClouds.setAlpha(0.5);
+      if (hasFar || hasSurf) {
+        this.usingPhotoLayers = true;
+
+        if (hasFar) {
+          const farTex = this.textures.get('bg_far_photo');
+          const fH = farTex.getSourceImage().height as number;
+          const fW = farTex.getSourceImage().width as number;
+          const fScale = 480 / fW;
+          const scaledH = fH * fScale;
+          this.photoLayerHeight = Math.max(this.photoLayerHeight, scaledH);
+
+          this.bgPhotoFarA = this.add.image(240, 320, 'bg_far_photo');
+          this.bgPhotoFarA.setDisplaySize(480, scaledH);
+          this.bgPhotoFarA.setDepth(0);
+
+          this.bgPhotoFarB = this.add.image(240, 320 - scaledH, 'bg_far_photo');
+          this.bgPhotoFarB.setDisplaySize(480, scaledH);
+          this.bgPhotoFarB.setDepth(0);
+        }
+
+        if (hasSurf) {
+          const surfTex = this.textures.get('bg_surface_photo');
+          const sH = surfTex.getSourceImage().height as number;
+          const sW = surfTex.getSourceImage().width as number;
+          const sScale = 480 / sW;
+          const scaledH = sH * sScale;
+          this.photoLayerHeight = Math.max(this.photoLayerHeight, scaledH);
+
+          this.bgPhotoSurfA = this.add.image(240, 320, 'bg_surface_photo');
+          this.bgPhotoSurfA.setDisplaySize(480, scaledH);
+          this.bgPhotoSurfA.setAlpha(0.78);
+          this.bgPhotoSurfA.setDepth(1);
+
+          this.bgPhotoSurfB = this.add.image(240, 320 - scaledH, 'bg_surface_photo');
+          this.bgPhotoSurfB.setDisplaySize(480, scaledH);
+          this.bgPhotoSurfB.setAlpha(0.78);
+          this.bgPhotoSurfB.setDepth(1);
+        }
+
+        // Thin nebula haze over the photos
+        this.bgNebula = this.add.tileSprite(240, 320, 480, 640, 'bg_nebula');
+        this.bgNebula.setAlpha(0.3);
+        this.bgNebula.setDepth(2);
+
+        // Cloud layer for atmosphere
+        this.bgClouds = this.add.tileSprite(240, 320, 480, 640, 'bg_clouds');
+        this.bgClouds.setAlpha(0.35);
+        this.bgClouds.setDepth(3);
+
+        // Orbital trench overlay — reduced opacity so photo shows through
+        this.bgTrench = this.add.tileSprite(240, 320, 480, 640, 'bg_trench_orbital');
+        this.bgTrench.setAlpha(0.45);
+        this.bgTrench.setDepth(4);
+
+      } else {
+        // Fallback: procedural-only Level 1
+        this.planetSprite = this.add.sprite(220, 280, 'planet_tyria');
+        this.planetSprite.setScale(1.25);
+        this.planetSprite.setAlpha(0.9);
+        this.bgClouds = this.add.tileSprite(240, 320, 480, 640, 'bg_clouds');
+        this.bgClouds.setAlpha(0.5);
+        this.bgNebula = this.add.tileSprite(240, 320, 480, 640, 'bg_nebula');
+        this.bgNebula.setAlpha(0.55);
+        this.bgTrench = this.add.tileSprite(240, 320, 480, 640, 'bg_trench_orbital');
+        this.bgTrench.setDepth(1);
+      }
+    } else {
+      // --- LEVELS 2 & 3: Procedural terrain ---
+      this.bgNebula = this.add.tileSprite(240, 320, 480, 640, 'bg_nebula');
+      this.bgNebula.setAlpha(0.55);
+
+      const terrainTex = this.currentLevelIndex === 2 ? 'bg_trench_hive' : 'bg_trench_citadel';
+      this.bgTrench = this.add.tileSprite(240, 320, 480, 640, terrainTex);
+      this.bgTrench.setDepth(1);
     }
-
-    this.bgNebula = this.add.tileSprite(240, 320, 480, 640, 'bg_nebula');
-    this.bgNebula.setAlpha(0.55);
-
-    // Level-specific authentic scrolling terrain (Xenon 2 / Tyrian style)
-    const terrainTex = this.currentLevelIndex === 1
-      ? 'bg_trench_orbital'
-      : (this.currentLevelIndex === 2 ? 'bg_trench_hive' : 'bg_trench_citadel');
-
-    this.bgTrench = this.add.tileSprite(240, 320, 480, 640, terrainTex);
-    this.bgTrench.setDepth(1);
 
     // 2. Physics Groups
     this.enemies = this.add.group({
@@ -371,21 +440,41 @@ export class GameScene extends Phaser.Scene {
     const scroll = this.levelConfig.scrollSpeed;
     this.bgStars.tilePositionY -= 0.6 * scroll;
 
-    // Tyrian Level 1: Planet Tyria gentle drift & rotation
-    if (this.planetSprite) {
-      this.planetSprite.y += 0.28 * scroll;
-      this.planetSprite.rotation += 0.00015;
-      if (this.planetSprite.y > 780) {
-        this.planetSprite.y = -240;
-        this.planetSprite.x = Phaser.Math.Between(150, 330);
-      }
-    }
-    if (this.bgClouds) {
-      this.bgClouds.tilePositionY -= 1.8 * scroll;
-    }
+    if (this.usingPhotoLayers) {
+      // Real parallax photo layers — leapfrog scrolling
+      const farSpeed = 0.55 * scroll;
+      const surfSpeed = 1.6 * scroll;
 
-    this.bgNebula.tilePositionY -= 1.1 * scroll;
-    this.bgTrench.tilePositionY -= 2.0 * scroll;
+      const leapfrog = (imgA: Phaser.GameObjects.Image | undefined, imgB: Phaser.GameObjects.Image | undefined, speed: number) => {
+        if (!imgA || !imgB) return;
+        const h = this.photoLayerHeight || 640;
+        imgA.y += speed;
+        imgB.y += speed;
+        if (imgA.y - h / 2 > 640) imgA.y = imgB.y - h;
+        if (imgB.y - h / 2 > 640) imgB.y = imgA.y - h;
+      };
+
+      leapfrog(this.bgPhotoFarA, this.bgPhotoFarB, farSpeed);
+      leapfrog(this.bgPhotoSurfA, this.bgPhotoSurfB, surfSpeed);
+
+      if (this.bgClouds) this.bgClouds.tilePositionY -= 1.8 * scroll;
+      if (this.bgNebula) this.bgNebula.tilePositionY -= 1.1 * scroll;
+      if (this.bgTrench) this.bgTrench.tilePositionY -= 2.0 * scroll;
+
+    } else {
+      // Procedural fallback scrolling
+      if (this.planetSprite) {
+        this.planetSprite.y += 0.28 * scroll;
+        this.planetSprite.rotation += 0.00015;
+        if (this.planetSprite.y > 780) {
+          this.planetSprite.y = -240;
+          this.planetSprite.x = Phaser.Math.Between(150, 330);
+        }
+      }
+      if (this.bgClouds) this.bgClouds.tilePositionY -= 1.8 * scroll;
+      if (this.bgNebula) this.bgNebula.tilePositionY -= 1.1 * scroll;
+      if (this.bgTrench) this.bgTrench.tilePositionY -= 2.0 * scroll;
+    }
 
     // 2. Real-time Ship Systems update (Tyrian Mechanics!)
     const sysUpdate = this.shipSystem.update(deltaSec);

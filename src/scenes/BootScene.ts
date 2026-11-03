@@ -7,6 +7,12 @@ export class BootScene extends Phaser.Scene {
     super({ key: 'BootScene' });
   }
 
+  preload(): void {
+    // Load real raster background layers (AI-generated planetary surface art)
+    this.load.image('bg_far_photo', 'assets/backgrounds/bg_far.jpg');
+    this.load.image('bg_surface_photo', 'assets/backgrounds/tyrian_surface.jpg');
+  }
+
   create(): void {
     // Generate programmatic pixel art textures
     TextureGenerator.generateAll(this);
