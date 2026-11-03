@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>CYBERSTORM: MEGABLAST - Retro Shmup</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body {
+      background: radial-gradient(circle at center, #151828 0%, #080910 100%);
+      color: #e0e8f0;
+      font-family: 'Courier New', Courier, monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #app-container {
+      position: relative;
+      padding: 12px;
+      background: linear-gradient(145deg, #222638, #10121d);
+      border-radius: 12px;
+      box-shadow: 0 0 35px rgba(0, 220, 255, 0.2), 0 0 80px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border: 2px solid #2a3148;
+    }
+    #game-container {
+      width: 480px;
+      height: 640px;
+      position: relative;
+      background: #000;
+      border: 3px solid #1a2030;
+      border-radius: 4px;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.95), 0 0 15px rgba(0, 255, 200, 0.1);
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .cabinet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 6px 8px 6px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #798ba8;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    .cabinet-header .brand {
+      color: #00f0ff;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+    }
+    .cabinet-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 6px 4px 6px;
+      font-size: 11px;
+      color: #5c6b84;
+    }
+    .controls-hint {
+      color: #8c9eb5;
+    }
+    .key-badge {
+      background: #1e2436;
+      border: 1px solid #3d4a6a;
+      color: #aee;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 10px;
+      margin: 0 2px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    <div class="cabinet-header">
+      <span class="brand">&#9670; CYBERSTORM &#9670;</span>
+      <span>SYSTEM: TYRIAN-MK3</span>
+    </div>
+    <div id="game-container"></div>
+    <div class="cabinet-footer">
+      <div class="controls-hint">
+        <span class="key-badge">WASD</span> / <span class="key-badge">&uarr;&larr;&darr;&rarr;</span> Move &nbsp;|&nbsp;
+        <span class="key-badge">SPACE</span> Fire &nbsp;|&nbsp;
+        <span class="key-badge">ESC</span> Pause
+      </div>
+      <div>60 FPS</div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

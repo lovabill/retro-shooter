@@ -1,0 +1,18 @@
+{
+  "name": "retro-shooter",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Retro Vertical Scrolling Shooter Prototype - Xenon 2 & Tyrian inspired",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "phaser": "^3.88.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.3.0"
+  }
+}
