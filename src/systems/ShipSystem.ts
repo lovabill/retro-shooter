@@ -96,6 +96,11 @@ export class ShipSystem {
       maxShieldRechargeLevel: 5,
       shieldRechargeUpgradeCost: 180,
 
+      // Engine Thruster Speed
+      engineSpeedLevel: 1,
+      maxEngineSpeedLevel: 5,
+      engineSpeedUpgradeCost: 140,
+
       // Xenon 2 Additive Weapons
       weapons: defaultWeapons,
 
@@ -260,6 +265,21 @@ export class ShipSystem {
       return true;
     }
     return false;
+  }
+
+  public buyEngineSpeedUpgrade(): boolean {
+    if (this.stats.engineSpeedLevel >= this.stats.maxEngineSpeedLevel) return false;
+    const cost = this.stats.engineSpeedUpgradeCost * this.stats.engineSpeedLevel;
+    if (this.stats.credits >= cost) {
+      this.stats.credits -= cost;
+      this.stats.engineSpeedLevel++;
+      return true;
+    }
+    return false;
+  }
+
+  public getPlayerSpeed(): number {
+    return 230 + (this.stats.engineSpeedLevel - 1) * 25;
   }
 
   public buyGeneratorUpgrade(): boolean {

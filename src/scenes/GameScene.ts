@@ -24,6 +24,8 @@ export class GameScene extends Phaser.Scene {
   private bgStars!: Phaser.GameObjects.TileSprite;
   private bgNebula!: Phaser.GameObjects.TileSprite;
   private bgBiomech!: Phaser.GameObjects.TileSprite;
+  private planetSprite?: Phaser.GameObjects.Sprite;
+  private bgClouds?: Phaser.GameObjects.TileSprite;
 
   // Level flow
   private currentLevelIndex: number = 1;
@@ -123,6 +125,17 @@ export class GameScene extends Phaser.Scene {
 
     // 1. Backgrounds
     this.bgStars = this.add.tileSprite(240, 320, 480, 640, 'bg_stars');
+
+    // Tyrian Level 1: Flying above Planet Tyria
+    if (this.currentLevelIndex === 1) {
+      this.planetSprite = this.add.sprite(220, 280, 'planet_tyria');
+      this.planetSprite.setScale(1.25);
+      this.planetSprite.setAlpha(0.9);
+
+      this.bgClouds = this.add.tileSprite(240, 320, 480, 640, 'bg_clouds');
+      this.bgClouds.setAlpha(0.5);
+    }
+
     this.bgNebula = this.add.tileSprite(240, 320, 480, 640, 'bg_nebula');
     this.bgNebula.setAlpha(0.65);
     this.bgBiomech = this.add.tileSprite(240, 320, 480, 640, 'bg_biomech');
@@ -351,6 +364,20 @@ export class GameScene extends Phaser.Scene {
     // 1. Parallax background scrolling
     const scroll = this.levelConfig.scrollSpeed;
     this.bgStars.tilePositionY -= 0.6 * scroll;
+
+    // Tyrian Level 1: Planet Tyria gentle drift & rotation
+    if (this.planetSprite) {
+      this.planetSprite.y += 0.28 * scroll;
+      this.planetSprite.rotation += 0.00015;
+      if (this.planetSprite.y > 780) {
+        this.planetSprite.y = -240;
+        this.planetSprite.x = Phaser.Math.Between(150, 330);
+      }
+    }
+    if (this.bgClouds) {
+      this.bgClouds.tilePositionY -= 1.8 * scroll;
+    }
+
     this.bgNebula.tilePositionY -= 1.1 * scroll;
     this.bgBiomech.tilePositionY -= 1.6 * scroll;
 
@@ -1073,8 +1100,17 @@ export class GameScene extends Phaser.Scene {
     this.isPaused = !this.isPaused;
     if (this.isPaused) {
       this.soundFX.stopMusic();
+      this.physics.pause();
+      this.tweens.pauseAll();
+      this.time.paused = true;
+      if (this.player && this.player.body) {
+        this.player.setVelocity(0, 0);
+      }
       this.showPauseMenu();
     } else {
+      this.physics.resume();
+      this.tweens.resumeAll();
+      this.time.paused = false;
       this.soundFX.startMusic(this.boss && this.boss.active ? 'boss' : 'battle');
       this.hidePauseMenu();
     }
@@ -1102,6 +1138,9 @@ export class GameScene extends Phaser.Scene {
 
     // Restart button
     const restartBtn = this.createMenuButton(0, 25, 'RESTART SECTOR', () => {
+      this.physics.resume();
+      this.tweens.resumeAll();
+      this.time.paused = false;
       this.hidePauseMenu();
       this.scene.restart({ level: this.currentLevelIndex });
     });

@@ -162,6 +162,6 @@ export class TitleScene extends Phaser.Scene {
     this.soundFX.resume();
     this.soundFX.playShopBuy();
     ShipSystem.getInstance().resetForNewGame();
-    this.scene.start('GameScene', { level: 1 });
+    this.scene.start('IntroScene');
   }
 }

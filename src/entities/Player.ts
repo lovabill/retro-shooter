@@ -107,16 +107,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // 1. Movement controls (WASD or Arrow keys)
     let vx = 0;
     let vy = 0;
+    const speed = this.shipSystem.getPlayerSpeed();
 
     const left = this.cursors.left.isDown || this.keyA.isDown;
     const right = this.cursors.right.isDown || this.keyD.isDown;
     const up = this.cursors.up.isDown || this.keyW.isDown;
     const down = this.cursors.down.isDown || this.keyS.isDown;
 
-    if (left) vx -= this.moveSpeed;
-    if (right) vx += this.moveSpeed;
-    if (up) vy -= this.moveSpeed;
-    if (down) vy += this.moveSpeed;
+    if (left) vx -= speed;
+    if (right) vx += speed;
+    if (up) vy -= speed;
+    if (down) vy += speed;
 
     if (vx !== 0 && vy !== 0) {
       vx *= 0.7071;

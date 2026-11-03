@@ -64,6 +64,11 @@ export interface ShipStats {
   maxShieldRechargeLevel: number;
   shieldRechargeUpgradeCost: number;
 
+  // Engine Thruster Speed (Xenon 2 / Tyrian Speed Upgrade)
+  engineSpeedLevel: number;
+  maxEngineSpeedLevel: number;
+  engineSpeedUpgradeCost: number;
+
   // Xenon 2 Additive Weapon Systems
   weapons: XenonWeapons;
 

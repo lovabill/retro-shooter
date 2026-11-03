@@ -372,6 +372,24 @@ export class ShopScene extends Phaser.Scene {
         }
       }
     );
+    y += 75;
+
+    // 5. Engine Thruster Speed Upgrade
+    const spdCost = stats.engineSpeedUpgradeCost * stats.engineSpeedLevel;
+    const isSpdMax = stats.engineSpeedLevel >= stats.maxEngineSpeedLevel;
+    this.createShopItemRow(
+      y,
+      `SUB-LIGHT AFTERBURNERS (Lv ${stats.engineSpeedLevel}/${stats.maxEngineSpeedLevel})`,
+      `Improves thruster response & elusive maneuverability (+25 px/s)`,
+      isSpdMax ? 'MAX SPEED' : `¢ ${spdCost}`,
+      !isSpdMax && stats.credits >= spdCost,
+      () => {
+        if (this.shipSystem.buyEngineSpeedUpgrade()) {
+          this.soundFX.playShopBuy();
+          this.refreshAll();
+        }
+      }
+    );
   }
 
   // --- TAB 3: GENERATOR & AUXILIARY ---

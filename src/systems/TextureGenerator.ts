@@ -645,6 +645,104 @@ export class TextureGenerator {
     });
 
     // 15. BACKGROUND TILES (PARALLAX TEXTURES)
+    // A) Planet Tyria Sphere (420x420) - Tyrian Level 1 Majestic Orbital Planet
+    createCanvas('planet_tyria', 420, 420, (ctx, w, h) => {
+      const cx = 210;
+      const cy = 210;
+      const radius = 190;
+
+      // Outer atmospheric Rayleigh scattering halo
+      const atmoGrad = ctx.createRadialGradient(cx, cy, radius * 0.85, cx, cy, radius * 1.08);
+      atmoGrad.addColorStop(0, 'rgba(0, 220, 255, 0.5)');
+      atmoGrad.addColorStop(0.5, 'rgba(0, 160, 255, 0.25)');
+      atmoGrad.addColorStop(1, 'rgba(0, 40, 120, 0)');
+      ctx.fillStyle = atmoGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * 1.08, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Clip to planet sphere
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.clip();
+
+      // Deep ocean base
+      const oceanGrad = ctx.createRadialGradient(cx - 50, cy - 50, 40, cx, cy, radius);
+      oceanGrad.addColorStop(0, '#1a5bc2');
+      oceanGrad.addColorStop(0.6, '#0d3284');
+      oceanGrad.addColorStop(1, '#05143a');
+      ctx.fillStyle = oceanGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Turquoise shallow coastal reefs
+      ctx.fillStyle = '#00a896';
+      ctx.beginPath();
+      ctx.ellipse(cx - 30, cy - 20, 120, 90, 0.3, 0, Math.PI * 2);
+      ctx.ellipse(cx + 60, cy + 50, 90, 70, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Continents (verdant green and warm terra cotta mountain terrain)
+      ctx.fillStyle = '#2d6a4f';
+      ctx.beginPath();
+      ctx.ellipse(cx - 40, cy - 25, 100, 75, 0.3, 0, Math.PI * 2);
+      ctx.ellipse(cx + 55, cy + 45, 75, 55, -0.2, 0, Math.PI * 2);
+      ctx.ellipse(cx - 70, cy + 80, 50, 40, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Highlands & mountain ridges
+      ctx.fillStyle = '#744210';
+      ctx.beginPath();
+      ctx.ellipse(cx - 35, cy - 35, 60, 35, 0.4, 0, Math.PI * 2);
+      ctx.ellipse(cx + 60, cy + 40, 45, 25, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Mountain snowcaps
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(cx - 35, cy - 38, 25, 10, 0.4, 0, Math.PI * 2);
+      ctx.ellipse(cx + 60, cy + 38, 18, 8, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Swirling atmospheric white cloud bands
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.beginPath();
+      ctx.ellipse(cx - 10, cy - 60, 140, 22, -0.15, 0, Math.PI * 2);
+      ctx.ellipse(cx + 20, cy + 10, 160, 28, 0.1, 0, Math.PI * 2);
+      ctx.ellipse(cx - 30, cy + 90, 130, 20, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cloud swirl hurricane
+      ctx.beginPath();
+      ctx.arc(cx + 80, cy - 50, 25, 0, Math.PI * 1.7);
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.stroke();
+
+      // Terminator shadow / Day-to-night crescent shading
+      const shadowGrad = ctx.createRadialGradient(cx - 60, cy - 60, radius * 0.4, cx + 40, cy + 40, radius * 1.1);
+      shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      shadowGrad.addColorStop(0.55, 'rgba(0, 0, 0, 0.2)');
+      shadowGrad.addColorStop(0.85, 'rgba(0, 5, 20, 0.85)');
+      shadowGrad.addColorStop(1, 'rgba(0, 2, 10, 0.98)');
+      ctx.fillStyle = shadowGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.restore();
+    });
+
+    // A2) Atmospheric Cloud Wisps (480x640)
+    createCanvas('bg_clouds', 480, 640, (ctx, w, h) => {
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+      for (let i = 0; i < 7; i++) {
+        const y = i * 95 + 40;
+        ctx.beginPath();
+        ctx.ellipse(120 + (i % 3) * 110, y, 160, 32, 0.12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
     // A) Deep Starfield (480x640)
     createCanvas('bg_stars', 480, 640, (ctx, w, h) => {
       ctx.fillStyle = '#060810';
