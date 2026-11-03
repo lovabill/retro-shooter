@@ -1,4 +1,4 @@
-import { ShipStats, WeaponType } from '../types/game';
+import { ShipStats, XenonWeapons } from '../types/game';
 
 export class ShipSystem {
   private static instance: ShipSystem;
@@ -8,8 +8,6 @@ export class ShipSystem {
   public currentEnergy: number = 100;
   public maxEnergy: number = 100;
 
-  // Energy draw / shield recharge constants
-  // Generator level determines both max energy capacity and energy generation per second
   private generatorTierNames: string[] = [
     'Standard Micro-Fission',
     'Dual Pulse Reactor',
@@ -32,6 +30,44 @@ export class ShipSystem {
   }
 
   public getDefaultStats(): ShipStats {
+    const defaultWeapons: XenonWeapons = {
+      // 1. Forward Cannons (Single -> Twin -> Triple -> Quad)
+      forwardCannonLevel: 1,
+      maxForwardCannonLevel: 4,
+      forwardCannonCost: 180,
+
+      // 2. Side Shots (Flank blasters firing diagonally)
+      hasSideShots: false,
+      sideShotLevel: 1,
+      maxSideShotLevel: 2,
+      sideShotCost: 220,
+
+      // 3. Rear Shots (Aft guns firing backwards)
+      hasRearShots: false,
+      rearShotLevel: 1,
+      maxRearShotLevel: 2,
+      rearShotCost: 160,
+
+      // 4. Homing Missiles Pod (guided rockets)
+      hasHomingMissiles: false,
+      homingMissileLevel: 1,
+      maxHomingMissileLevel: 2,
+      homingMissileCost: 320,
+
+      // 5. Piercing Laser Core (pierces multiple targets)
+      hasLaserBeam: false,
+      laserCost: 400,
+
+      // 6. Global Power & Fire Rate Multipliers (Nashwan Power)
+      powerLevel: 1,
+      maxPowerLevel: 5,
+      powerUpgradeCost: 150,
+
+      fireRateLevel: 1,
+      maxFireRateLevel: 5,
+      fireRateUpgradeCost: 140
+    };
+
     return {
       // Hull
       hull: 100,
@@ -49,7 +85,7 @@ export class ShipSystem {
       shieldUpgradeCost: 250,
 
       // Generator
-      generatorPower: 25, // energy units generated per second
+      generatorPower: 25,
       generatorLevel: 1,
       maxGeneratorLevel: 5,
       generatorUpgradeCost: 300,
@@ -60,74 +96,12 @@ export class ShipSystem {
       maxShieldRechargeLevel: 5,
       shieldRechargeUpgradeCost: 180,
 
+      // Xenon 2 Additive Weapons
+      weapons: defaultWeapons,
+
       // Wingman
       hasWingman: false,
-      wingmanCost: 600,
-
-      // Weapons
-      currentWeapon: 'PULSE_CANNON',
-      weapons: {
-        PULSE_CANNON: {
-          type: 'PULSE_CANNON',
-          name: 'Vulcan Pulse',
-          description: 'Twin high-velocity laser cannons. Reliable and accurate.',
-          unlocked: true,
-          cost: 0,
-          powerLevel: 1,
-          maxPowerLevel: 5,
-          fireRateLevel: 1,
-          maxFireRateLevel: 5,
-          baseDamage: 24,
-          baseFireIntervalMs: 180,
-          powerUpgradeCost: 150,
-          fireRateUpgradeCost: 140
-        },
-        WAVE_SPREADER: {
-          type: 'WAVE_SPREADER',
-          name: 'Wave Spreader',
-          description: 'Fires broad oscillating sonic waves. Destroys swarms easily.',
-          unlocked: false,
-          cost: 350,
-          powerLevel: 1,
-          maxPowerLevel: 5,
-          fireRateLevel: 1,
-          maxFireRateLevel: 5,
-          baseDamage: 18,
-          baseFireIntervalMs: 220,
-          powerUpgradeCost: 180,
-          fireRateUpgradeCost: 170
-        },
-        HEAVY_PLASMA: {
-          type: 'HEAVY_PLASMA',
-          name: 'Megablast Plasma',
-          description: 'High-density explosive plasma bolts. High damage with splash.',
-          unlocked: false,
-          cost: 500,
-          powerLevel: 1,
-          maxPowerLevel: 5,
-          fireRateLevel: 1,
-          maxFireRateLevel: 5,
-          baseDamage: 55,
-          baseFireIntervalMs: 340,
-          powerUpgradeCost: 240,
-          fireRateUpgradeCost: 220
-        },
-        HOMING_SWARM: {
-          type: 'HOMING_SWARM',
-          name: 'Viper Missiles',
-          description: 'Dual forward blasters + heat-seeking micro-missiles.',
-          unlocked: false,
-          cost: 750,
-          powerLevel: 1,
-          maxPowerLevel: 5,
-          fireRateLevel: 1,
-          maxFireRateLevel: 5,
-          baseDamage: 30,
-          baseFireIntervalMs: 250,
-          powerUpgradeCost: 280,
-          fireRateUpgradeCost: 260
-        }
-      },
+      wingmanCost: 380,
 
       credits: 0,
       score: 0,
@@ -143,23 +117,18 @@ export class ShipSystem {
 
   public recomputeDerivedStats(): void {
     // Hull scaling
-    this.stats.maxHull = 100 + (this.stats.hullLevel - 1) * 35; // 100, 135, 170, 205, 240
+    this.stats.maxHull = 100 + (this.stats.hullLevel - 1) * 35;
     if (this.stats.hull > this.stats.maxHull) {
       this.stats.hull = this.stats.maxHull;
     }
 
     // Shield scaling
-    this.stats.maxShield = 80 + (this.stats.shieldLevel - 1) * 30; // 80, 110, 140, 170, 200
+    this.stats.maxShield = 80 + (this.stats.shieldLevel - 1) * 30;
     if (this.stats.shield > this.stats.maxShield) {
       this.stats.shield = this.stats.maxShield;
     }
 
     // Generator scaling
-    // Level 1: 25 energy/s, 100 maxEnergy
-    // Level 2: 38 energy/s, 140 maxEnergy
-    // Level 3: 54 energy/s, 190 maxEnergy
-    // Level 4: 72 energy/s, 250 maxEnergy
-    // Level 5: 95 energy/s, 320 maxEnergy
     const genLvl = this.stats.generatorLevel;
     this.stats.generatorPower = 20 + genLvl * 8 + (genLvl > 2 ? (genLvl - 2) * 5 : 0);
     this.maxEnergy = 80 + genLvl * 30 + (genLvl > 3 ? 50 : 0);
@@ -170,37 +139,24 @@ export class ShipSystem {
     }
   }
 
-  /**
-   * Called every frame in GameScene update (delta in seconds)
-   * Handles Generator energy replenishment and Shield regeneration
-   */
   public update(deltaSec: number): { shieldRecharging: boolean; energyStarved: boolean } {
-    // 1. Generator produces energy continuously
     const energyGained = this.stats.generatorPower * deltaSec;
     this.currentEnergy = Math.min(this.maxEnergy, this.currentEnergy + energyGained);
 
     let shieldRecharging = false;
     let energyStarved = false;
 
-    // 2. Shield recharges if damaged
     if (this.stats.shield < this.stats.maxShield) {
       shieldRecharging = true;
-
-      // Base shield recharge speed + booster upgrade
-      // Base: 12 shield HP/s, Booster adds +5 HP/s per level (up to 32 HP/s)
       const targetShieldRechargeRate = 12 + (this.stats.shieldRechargeLevel - 1) * 5;
-
-      // Shield regeneration requires energy: 1 shield point costs 1.4 energy
       const energyCostPerShieldUnit = 1.4;
       const desiredShieldGain = targetShieldRechargeRate * deltaSec;
       const energyNeeded = desiredShieldGain * energyCostPerShieldUnit;
 
       if (this.currentEnergy >= energyNeeded) {
-        // Full recharge powered by generator
         this.currentEnergy -= energyNeeded;
         this.stats.shield = Math.min(this.stats.maxShield, this.stats.shield + desiredShieldGain);
       } else {
-        // Generator is strained / starved! Shield recharges only as much as energy allows
         energyStarved = true;
         const actualShieldGain = this.currentEnergy / energyCostPerShieldUnit;
         this.stats.shield = Math.min(this.stats.maxShield, this.stats.shield + actualShieldGain);
@@ -211,12 +167,6 @@ export class ShipSystem {
     return { shieldRecharging, energyStarved };
   }
 
-  /**
-   * Apply incoming damage to ship:
-   * 1. Shield absorbs damage first.
-   * 2. Any excess damage breaches hull.
-   * Returns: { shieldDamage: number, hullDamage: number, isDestroyed: boolean }
-   */
   public takeDamage(amount: number): { shieldDamage: number; hullDamage: number; isDestroyed: boolean } {
     let shieldDamage = 0;
     let hullDamage = 0;
@@ -253,10 +203,7 @@ export class ShipSystem {
     this.stats.credits += amount;
   }
 
-  // Shop actions
-  public canAfford(cost: number): boolean {
-    return this.stats.credits >= cost;
-  }
+  // --- SHOP ACTIONS ---
 
   public buyHullUpgrade(): boolean {
     if (this.stats.hullLevel >= this.stats.maxHullLevel) return false;
@@ -266,7 +213,6 @@ export class ShipSystem {
       this.stats.hullLevel++;
       const oldMax = this.stats.maxHull;
       this.recomputeDerivedStats();
-      // Also grant the new bonus capacity as immediate health
       this.stats.hull += (this.stats.maxHull - oldMax);
       return true;
     }
@@ -282,7 +228,6 @@ export class ShipSystem {
       this.stats.hull = this.stats.maxHull;
       return true;
     } else if (this.stats.credits > 0) {
-      // Partial repair with available credits
       const repairable = Math.floor(this.stats.credits / this.stats.hullRepairCostPerUnit);
       if (repairable > 0) {
         this.stats.credits -= Math.ceil(repairable * this.stats.hullRepairCostPerUnit);
@@ -330,37 +275,110 @@ export class ShipSystem {
     return false;
   }
 
-  public unlockWeapon(type: WeaponType): boolean {
-    const weapon = this.stats.weapons[type];
-    if (weapon.unlocked) return false;
-    if (this.stats.credits >= weapon.cost) {
-      this.stats.credits -= weapon.cost;
-      weapon.unlocked = true;
-      this.stats.currentWeapon = type;
+  // --- XENON 2 ADDITIVE WEAPON PURCHASES ---
+
+  public upgradeForwardCannons(): boolean {
+    const w = this.stats.weapons;
+    if (w.forwardCannonLevel >= w.maxForwardCannonLevel) return false;
+    const cost = w.forwardCannonCost * w.forwardCannonLevel;
+    if (this.stats.credits >= cost) {
+      this.stats.credits -= cost;
+      w.forwardCannonLevel++;
       return true;
     }
     return false;
   }
 
-  public upgradeWeaponPower(type: WeaponType): boolean {
-    const weapon = this.stats.weapons[type];
-    if (!weapon.unlocked || weapon.powerLevel >= weapon.maxPowerLevel) return false;
-    const cost = weapon.powerUpgradeCost * weapon.powerLevel;
-    if (this.stats.credits >= cost) {
-      this.stats.credits -= cost;
-      weapon.powerLevel++;
+  public buyOrUpgradeSideShots(): boolean {
+    const w = this.stats.weapons;
+    if (!w.hasSideShots) {
+      if (this.stats.credits >= w.sideShotCost) {
+        this.stats.credits -= w.sideShotCost;
+        w.hasSideShots = true;
+        w.sideShotLevel = 1;
+        return true;
+      }
+    } else if (w.sideShotLevel < w.maxSideShotLevel) {
+      const upgradeCost = Math.round(w.sideShotCost * 0.9);
+      if (this.stats.credits >= upgradeCost) {
+        this.stats.credits -= upgradeCost;
+        w.sideShotLevel++;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public buyOrUpgradeRearShots(): boolean {
+    const w = this.stats.weapons;
+    if (!w.hasRearShots) {
+      if (this.stats.credits >= w.rearShotCost) {
+        this.stats.credits -= w.rearShotCost;
+        w.hasRearShots = true;
+        w.rearShotLevel = 1;
+        return true;
+      }
+    } else if (w.rearShotLevel < w.maxRearShotLevel) {
+      const upgradeCost = Math.round(w.rearShotCost * 0.9);
+      if (this.stats.credits >= upgradeCost) {
+        this.stats.credits -= upgradeCost;
+        w.rearShotLevel++;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public buyOrUpgradeHomingMissiles(): boolean {
+    const w = this.stats.weapons;
+    if (!w.hasHomingMissiles) {
+      if (this.stats.credits >= w.homingMissileCost) {
+        this.stats.credits -= w.homingMissileCost;
+        w.hasHomingMissiles = true;
+        w.homingMissileLevel = 1;
+        return true;
+      }
+    } else if (w.homingMissileLevel < w.maxHomingMissileLevel) {
+      const upgradeCost = Math.round(w.homingMissileCost * 0.9);
+      if (this.stats.credits >= upgradeCost) {
+        this.stats.credits -= upgradeCost;
+        w.homingMissileLevel++;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public buyLaserBeam(): boolean {
+    const w = this.stats.weapons;
+    if (w.hasLaserBeam) return false;
+    if (this.stats.credits >= w.laserCost) {
+      this.stats.credits -= w.laserCost;
+      w.hasLaserBeam = true;
       return true;
     }
     return false;
   }
 
-  public upgradeWeaponFireRate(type: WeaponType): boolean {
-    const weapon = this.stats.weapons[type];
-    if (!weapon.unlocked || weapon.fireRateLevel >= weapon.maxFireRateLevel) return false;
-    const cost = weapon.fireRateUpgradeCost * weapon.fireRateLevel;
+  public upgradeWeaponPower(): boolean {
+    const w = this.stats.weapons;
+    if (w.powerLevel >= w.maxPowerLevel) return false;
+    const cost = w.powerUpgradeCost * w.powerLevel;
     if (this.stats.credits >= cost) {
       this.stats.credits -= cost;
-      weapon.fireRateLevel++;
+      w.powerLevel++;
+      return true;
+    }
+    return false;
+  }
+
+  public upgradeWeaponFireRate(): boolean {
+    const w = this.stats.weapons;
+    if (w.fireRateLevel >= w.maxFireRateLevel) return false;
+    const cost = w.fireRateUpgradeCost * w.fireRateLevel;
+    if (this.stats.credits >= cost) {
+      this.stats.credits -= cost;
+      w.fireRateLevel++;
       return true;
     }
     return false;
@@ -376,32 +394,12 @@ export class ShipSystem {
     return false;
   }
 
-  public switchWeapon(type: WeaponType): void {
-    if (this.stats.weapons[type]?.unlocked) {
-      this.stats.currentWeapon = type;
-    }
+  public getFireIntervalMs(): number {
+    const baseInterval = 190;
+    return Math.max(75, Math.round(baseInterval * (1 - (this.stats.weapons.fireRateLevel - 1) * 0.12)));
   }
 
-  public getCurrentWeaponConfig(): {
-    type: WeaponType;
-    name: string;
-    damage: number;
-    fireIntervalMs: number;
-    powerLevel: number;
-    fireRateLevel: number;
-  } {
-    const w = this.stats.weapons[this.stats.currentWeapon];
-    // Damage scales with power level (+25% per power level)
-    const damage = Math.round(w.baseDamage * (1 + (w.powerLevel - 1) * 0.35));
-    // Interval shortens with fire rate level (-12% per fire rate level)
-    const fireIntervalMs = Math.max(70, Math.round(w.baseFireIntervalMs * (1 - (w.fireRateLevel - 1) * 0.12)));
-    return {
-      type: w.type,
-      name: w.name,
-      damage,
-      fireIntervalMs,
-      powerLevel: w.powerLevel,
-      fireRateLevel: w.fireRateLevel
-    };
+  public getDamageMultiplier(): number {
+    return 1 + (this.stats.weapons.powerLevel - 1) * 0.28;
   }
 }

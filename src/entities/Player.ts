@@ -1,8 +1,6 @@
 import Phaser from 'phaser';
 import { ShipSystem } from '../systems/ShipSystem';
 import { SoundFX } from '../systems/SoundFX';
-import { Projectile } from './Projectile';
-import { WeaponType } from '../types/game';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   public shipSystem: ShipSystem;
@@ -35,8 +33,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     vx: number,
     vy: number,
     damage: number,
-    type: WeaponType,
-    homing?: boolean
+    texture: string,
+    homing?: boolean,
+    piercing?: boolean
   ) => void;
 
   public moveSpeed: number = 230;
@@ -75,7 +74,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.updateWingmenVisibility();
   }
 
-  public setOnFireCallback(cb: (x: number, y: number, vx: number, vy: number, damage: number, type: WeaponType, homing?: boolean) => void): void {
+  public setOnFireCallback(cb: (
+    x: number,
+    y: number,
+    vx: number,
+    vy: number,
+    damage: number,
+    texture: string,
+    homing?: boolean,
+    piercing?: boolean
+  ) => void): void {
     this.onFireCallback = cb;
   }
 
@@ -96,8 +104,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   public updatePlayer(delta: number): void {
     if (!this.active) return;
 
-    const deltaSec = delta / 1000;
-
     // 1. Movement controls (WASD or Arrow keys)
     let vx = 0;
     let vy = 0;
@@ -112,7 +118,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (up) vy -= this.moveSpeed;
     if (down) vy += this.moveSpeed;
 
-    // Normalize diagonal speed
     if (vx !== 0 && vy !== 0) {
       vx *= 0.7071;
       vy *= 0.7071;
@@ -120,11 +125,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.setVelocity(vx, vy);
 
-    // Clamp inside playfield (leave room for HUD top & bottom)
+    // Clamp inside playfield
     this.x = Phaser.Math.Clamp(this.x, 20, 460);
     this.y = Phaser.Math.Clamp(this.y, 45, 610);
 
-    // 2. Thruster Flame animation & position
+    // 2. Thruster Flame animation
     this.flameSprite.setPosition(this.x, this.y + 20);
     this.flameAnimTimer += delta;
     if (this.flameAnimTimer > 70) {
@@ -156,82 +161,123 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // 6. Firing logic (hold Space)
+    // 6. Xenon 2 All-Weapons Simultaneous Firing (Hold Space)
     this.fireTimer -= delta;
     if (this.keySpace.isDown && this.fireTimer <= 0) {
-      this.fireWeapon();
+      this.fireAllMountedWeapons();
     }
   }
 
-  private fireWeapon(): void {
+  /**
+   * Xenon 2: Megablast Simultaneous All-Weapons Firing!
+   * Every mounted weapon hardpoint fires in unison.
+   */
+  private fireAllMountedWeapons(): void {
     if (!this.onFireCallback) return;
     const onFire = this.onFireCallback;
 
-    const config = this.shipSystem.getCurrentWeaponConfig();
-    this.fireTimer = config.fireIntervalMs;
+    const w = this.shipSystem.stats.weapons;
+    const dmgMult = this.shipSystem.getDamageMultiplier();
+    this.fireTimer = this.shipSystem.getFireIntervalMs();
 
-    this.soundFX.playShoot(config.type);
+    // Forward cannon sound & fire
+    this.soundFX.playShoot(w.forwardCannonLevel >= 3 ? 'heavy' : 'pulse');
 
-    switch (config.type) {
-      case 'PULSE_CANNON': {
-        // Dual forward cannons
-        const bulletSpeed = -540;
-        onFire(this.x - 8, this.y - 12, 0, bulletSpeed, config.damage, 'PULSE_CANNON');
-        onFire(this.x + 8, this.y - 12, 0, bulletSpeed, config.damage, 'PULSE_CANNON');
+    // 1. FORWARD CANNONS (Single -> Twin -> Triple -> Quad Megablast)
+    const baseForwardDmg = Math.round(22 * dmgMult);
+    const forwardSpeed = -540;
 
-        // Extra center high-speed blast if power level >= 3
-        if (config.powerLevel >= 3) {
-          onFire(this.x, this.y - 16, 0, bulletSpeed * 1.15, Math.round(config.damage * 0.7), 'PULSE_CANNON');
-        }
+    switch (w.forwardCannonLevel) {
+      case 1: {
+        // Single Center Cannon
+        onFire(this.x, this.y - 14, 0, forwardSpeed, baseForwardDmg, 'proj_pulse');
         break;
       }
-      case 'WAVE_SPREADER': {
-        // Multi-angle wave arcs
-        const speed = 460;
-        const angles = config.powerLevel >= 3 ? [-28, -14, 0, 14, 28] : [-18, 0, 18];
-        angles.forEach(deg => {
-          const rad = Phaser.Math.DegToRad(deg - 90);
-          onFire(
-            this.x,
-            this.y - 10,
-            Math.cos(rad) * speed,
-            Math.sin(rad) * speed,
-            config.damage,
-            'WAVE_SPREADER'
-          );
-        });
+      case 2: {
+        // Twin Heavy Cannons
+        onFire(this.x - 8, this.y - 12, 0, forwardSpeed, baseForwardDmg, 'proj_pulse');
+        onFire(this.x + 8, this.y - 12, 0, forwardSpeed, baseForwardDmg, 'proj_pulse');
         break;
       }
-      case 'HEAVY_PLASMA': {
-        // Heavy explosive orb
-        const speed = -420;
-        onFire(this.x, this.y - 14, 0, speed, config.damage, 'HEAVY_PLASMA');
-        if (config.powerLevel >= 4) {
-          // Twin plasma shot
-          onFire(this.x - 12, this.y - 10, -40, speed, Math.round(config.damage * 0.6), 'HEAVY_PLASMA');
-          onFire(this.x + 12, this.y - 10, 40, speed, Math.round(config.damage * 0.6), 'HEAVY_PLASMA');
-        }
+      case 3: {
+        // Triple Plasma Cannons
+        onFire(this.x - 10, this.y - 12, -45, forwardSpeed, baseForwardDmg, 'proj_pulse');
+        onFire(this.x, this.y - 15, 0, forwardSpeed * 1.08, Math.round(baseForwardDmg * 1.2), 'proj_pulse');
+        onFire(this.x + 10, this.y - 12, 45, forwardSpeed, baseForwardDmg, 'proj_pulse');
         break;
       }
-      case 'HOMING_SWARM': {
-        // Forward dual blasters + homing micro missiles
-        const bulletSpeed = -500;
-        onFire(this.x - 6, this.y - 12, 0, bulletSpeed, config.damage, 'PULSE_CANNON');
-        onFire(this.x + 6, this.y - 12, 0, bulletSpeed, config.damage, 'PULSE_CANNON');
-
-        // Homing missiles
-        const missileDmg = Math.round(config.damage * 1.2);
-        onFire(this.x - 16, this.y - 4, -90, -220, missileDmg, 'HOMING_SWARM', true);
-        onFire(this.x + 16, this.y - 4, 90, -220, missileDmg, 'HOMING_SWARM', true);
+      case 4: {
+        // Quad Megablast Heavy Cannons
+        const quadDmg = Math.round(baseForwardDmg * 1.15);
+        onFire(this.x - 14, this.y - 10, -35, forwardSpeed, quadDmg, 'proj_pulse');
+        onFire(this.x - 5, this.y - 14, 0, forwardSpeed * 1.1, quadDmg, 'proj_pulse');
+        onFire(this.x + 5, this.y - 14, 0, forwardSpeed * 1.1, quadDmg, 'proj_pulse');
+        onFire(this.x + 14, this.y - 10, 35, forwardSpeed, quadDmg, 'proj_pulse');
         break;
       }
     }
 
-    // Wingmen support fire
+    // 2. SIDE SHOTS (Flank diagonal blasters)
+    if (w.hasSideShots) {
+      this.soundFX.playSideShot();
+      const sideDmg = Math.round(18 * dmgMult);
+      const sideSpeed = 420;
+
+      // Diagonal Left (-135°) & Diagonal Right (-45°)
+      const radL = Phaser.Math.DegToRad(-135);
+      const radR = Phaser.Math.DegToRad(-45);
+
+      onFire(this.x - 12, this.y - 4, Math.cos(radL) * sideSpeed, Math.sin(radL) * sideSpeed, sideDmg, 'proj_side');
+      onFire(this.x + 12, this.y - 4, Math.cos(radR) * sideSpeed, Math.sin(radR) * sideSpeed, sideDmg, 'proj_side');
+
+      if (w.sideShotLevel >= 2) {
+        // Second wider spread angle
+        const radL2 = Phaser.Math.DegToRad(-160);
+        const radR2 = Phaser.Math.DegToRad(-20);
+        onFire(this.x - 14, this.y, Math.cos(radL2) * sideSpeed, Math.sin(radL2) * sideSpeed, sideDmg, 'proj_side');
+        onFire(this.x + 14, this.y, Math.cos(radR2) * sideSpeed, Math.sin(radR2) * sideSpeed, sideDmg, 'proj_side');
+      }
+    }
+
+    // 3. REAR SHOTS (Aft blasters firing backwards)
+    if (w.hasRearShots) {
+      const rearDmg = Math.round(20 * dmgMult);
+      const rearSpeed = 460; // fires downward
+
+      if (w.rearShotLevel === 1) {
+        onFire(this.x, this.y + 16, 0, rearSpeed, rearDmg, 'proj_rear');
+      } else {
+        onFire(this.x - 8, this.y + 16, -20, rearSpeed, rearDmg, 'proj_rear');
+        onFire(this.x + 8, this.y + 16, 20, rearSpeed, rearDmg, 'proj_rear');
+      }
+    }
+
+    // 4. HOMING MISSILES POD
+    if (w.hasHomingMissiles) {
+      this.soundFX.playMissileLaunch();
+      const missileDmg = Math.round(35 * dmgMult);
+
+      onFire(this.x - 16, this.y, -110, -200, missileDmg, 'proj_missile', true);
+      onFire(this.x + 16, this.y, 110, -200, missileDmg, 'proj_missile', true);
+
+      if (w.homingMissileLevel >= 2) {
+        onFire(this.x - 22, this.y + 8, -140, -180, missileDmg, 'proj_missile', true);
+        onFire(this.x + 22, this.y + 8, 140, -180, missileDmg, 'proj_missile', true);
+      }
+    }
+
+    // 5. PIERCING LASER BEAM
+    if (w.hasLaserBeam) {
+      this.soundFX.playLaser();
+      const laserDmg = Math.round(45 * dmgMult);
+      onFire(this.x, this.y - 18, 0, -620, laserDmg, 'proj_laser', false, true);
+    }
+
+    // 6. WINGMEN COMBAT DRONES
     if (this.shipSystem.stats.hasWingman && this.leftWingman && this.rightWingman) {
-      const droneDmg = 12;
-      onFire(this.leftWingman.x, this.leftWingman.y - 8, 0, -480, droneDmg, 'PULSE_CANNON');
-      onFire(this.rightWingman.x, this.rightWingman.y - 8, 0, -480, droneDmg, 'PULSE_CANNON');
+      const droneDmg = Math.round(14 * dmgMult);
+      onFire(this.leftWingman.x, this.leftWingman.y - 8, 0, -500, droneDmg, 'proj_pulse');
+      onFire(this.rightWingman.x, this.rightWingman.y - 8, 0, -500, droneDmg, 'proj_pulse');
     }
   }
 

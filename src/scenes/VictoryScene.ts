@@ -74,11 +74,14 @@ export class VictoryScene extends Phaser.Scene {
       rankColor = '#00f0ff';
     }
 
+    const cannonNames = ['Single Pulse', 'Twin Cannons', 'Triple Plasma', 'Quad Megablast'];
+    const activeCannon = cannonNames[stats.weapons.forwardCannonLevel - 1] || 'Cannons';
+
     const lines = [
       `TOTAL SCORE:     ${finalScore.toString().padStart(6, '0')}`,
       `RESERVE CREDITS: ¢ ${stats.credits}`,
       `REACTOR CORE:    ${stats.generatorName}`,
-      `PRIMARY WEAPON:  ${stats.weapons[stats.currentWeapon].name} (Lv ${stats.weapons[stats.currentWeapon].powerLevel})`,
+      `FORWARD CANNONS: ${activeCannon} (Pwr Lv${stats.weapons.powerLevel})`,
       `SHIELD DEFENSE:  Lv ${stats.shieldLevel} (${stats.maxShield} Cap)`
     ];
 

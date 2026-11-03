@@ -6,7 +6,7 @@ import { Enemy } from '../entities/Enemy';
 import { Boss, BossType } from '../entities/Boss';
 import { Projectile } from '../entities/Projectile';
 import { Pickup, PickupType } from '../entities/Pickup';
-import { EnemyConfig, LevelConfig, WeaponType } from '../types/game';
+import { EnemyConfig, LevelConfig } from '../types/game';
 
 export class GameScene extends Phaser.Scene {
   private shipSystem!: ShipSystem;
@@ -460,14 +460,10 @@ export class GameScene extends Phaser.Scene {
     vx: number,
     vy: number,
     damage: number,
-    type: WeaponType,
-    homing?: boolean
+    texture: string = 'proj_pulse',
+    homing?: boolean,
+    piercing?: boolean
   ): void {
-    let texture = 'proj_pulse';
-    if (type === 'WAVE_SPREADER') texture = 'proj_wave';
-    else if (type === 'HEAVY_PLASMA') texture = 'proj_plasma';
-    else if (homing) texture = 'proj_missile';
-
     let proj = this.playerProjectiles.getFirstDead(false) as Projectile;
     if (!proj) {
       proj = new Projectile(this, x, y, texture);
@@ -476,9 +472,9 @@ export class GameScene extends Phaser.Scene {
       proj.setTexture(texture);
     }
 
-    proj.fire(x, y, vx, vy, damage, true, !!homing, type);
+    proj.fire(x, y, vx, vy, damage, true, !!homing, !!piercing);
 
-    // If homing, assign nearest active enemy
+    // If homing, assign nearest active enemy or boss
     if (homing) {
       let nearest: Phaser.GameObjects.GameObject | null = this.boss && this.boss.active ? this.boss : null;
       let minDist = 9999;
@@ -773,7 +769,12 @@ export class GameScene extends Phaser.Scene {
 
     if (!bullet.active || !enemy.active) return;
 
-    bullet.deactivate();
+    if (bullet.piercing && bullet.pierceCount > 0) {
+      bullet.pierceCount--;
+    } else {
+      bullet.deactivate();
+    }
+
     this.createImpactSpark(bullet.x, bullet.y);
     this.soundFX.playHit();
 
@@ -888,7 +889,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private defeatBoss(boss: Boss): void {
-    this.levelCompleted = true;
+    // Stop boss battle music, play victory fanfare
     this.soundFX.stopMusic();
     this.soundFX.playStageClear();
 
@@ -898,38 +899,85 @@ export class GameScene extends Phaser.Scene {
     boss.deactivate();
     this.bossHudContainer.setVisible(false);
 
+    // Clear any enemy projectiles remaining on screen so player is safe to collect loot
+    this.enemyProjectiles.getChildren().forEach(p => {
+      (p as Projectile).deactivate();
+    });
+
     // Multi-stage explosion chain
-    for (let i = 0; i < 7; i++) {
-      this.time.delayedCall(i * 180, () => {
-        const ox = bx + Phaser.Math.Between(-45, 45);
-        const oy = by + Phaser.Math.Between(-35, 35);
+    for (let i = 0; i < 8; i++) {
+      this.time.delayedCall(i * 150, () => {
+        const ox = bx + Phaser.Math.Between(-50, 50);
+        const oy = by + Phaser.Math.Between(-40, 40);
         this.soundFX.playExplosion(true);
-        this.createExplosionParticles(ox, oy, 22);
-        this.cameras.main.shake(200, 0.015);
+        this.createExplosionParticles(ox, oy, 25);
+        this.cameras.main.shake(180, 0.015);
       });
     }
 
-    // Shower of high-value gems & credits
-    for (let i = 0; i < 8; i++) {
-      this.time.delayedCall(400 + i * 100, () => {
-        this.spawnPickup(bx + Phaser.Math.Between(-30, 30), by + Phaser.Math.Between(-20, 20), 'gem', 40);
+    // Shower of high-value biocrystals & credits spreading outward from boss
+    for (let i = 0; i < 18; i++) {
+      this.time.delayedCall(250 + i * 70, () => {
+        const dropX = bx + Phaser.Math.Between(-45, 45);
+        const dropY = by + Phaser.Math.Between(-35, 35);
+        const isGem = i % 2 === 0;
+        this.spawnPickup(dropX, dropY, isGem ? 'gem' : 'credit', isGem ? 40 : 20);
       });
     }
 
     // Award major boss score
     const bossBonusScore = 5000 * this.currentLevelIndex;
     this.shipSystem.addScore(bossBonusScore);
-    this.showFloatingText(bx, by, `BOSS CLEARED! +${bossBonusScore}`, '#00f0ff');
+    this.showFloatingText(bx, by, `BOSS DESTROYED! +${bossBonusScore}`, '#00f0ff');
 
-    // Transition after celebration
-    this.time.delayedCall(2800, () => {
-      if (this.currentLevelIndex < 3) {
-        // Transition to Upgrade Shop Hangar!
-        this.scene.start('ShopScene', { nextLevel: this.currentLevelIndex + 1 });
-      } else {
-        // Victory!
-        this.scene.start('VictoryScene');
+    // On-screen collection phase banner with countdown
+    const lootBanner = this.add.container(240, 95);
+    lootBanner.setDepth(150);
+
+    const bannerBg = this.add.rectangle(0, 0, 380, 36, 0x071520, 0.85);
+    bannerBg.setStrokeStyle(1, 0x00f0ff);
+
+    const bannerText = this.add.text(0, 0, 'SECTOR CLEARED! VACUUM BOUNTY [06s]', {
+      fontFamily: 'Courier New, monospace',
+      fontSize: '12px',
+      color: '#ffd700',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    lootBanner.add([bannerBg, bannerText]);
+
+    let remainingSeconds = 6;
+    const countdownTimer = this.time.addEvent({
+      delay: 1000,
+      repeat: 5,
+      callback: () => {
+        remainingSeconds--;
+        bannerText.setText(`SECTOR CLEARED! VACUUM BOUNTY [0${remainingSeconds}s]`);
       }
+    });
+
+    // 6.5 seconds of free flight to collect loot!
+    this.time.delayedCall(6500, () => {
+      countdownTimer.destroy();
+      bannerText.setText('WARPING TO UPGRADE HANGAR...');
+      bannerText.setColor('#00e676');
+
+      this.tweens.add({
+        targets: lootBanner,
+        alpha: 0,
+        delay: 800,
+        duration: 400,
+        onComplete: () => lootBanner.destroy()
+      });
+
+      this.time.delayedCall(1200, () => {
+        this.levelCompleted = true;
+        if (this.currentLevelIndex < 3) {
+          this.scene.start('ShopScene', { nextLevel: this.currentLevelIndex + 1 });
+        } else {
+          this.scene.start('VictoryScene');
+        }
+      });
     });
   }
 

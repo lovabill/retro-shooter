@@ -1,18 +1,38 @@
-export type WeaponType = 'PULSE_CANNON' | 'WAVE_SPREADER' | 'HEAVY_PLASMA' | 'HOMING_SWARM';
+export interface XenonWeapons {
+  // 1. Forward Cannons (Single -> Twin -> Triple -> Quad)
+  forwardCannonLevel: number;     // 1 to 4
+  maxForwardCannonLevel: number;
+  forwardCannonCost: number;
 
-export interface WeaponConfig {
-  type: WeaponType;
-  name: string;
-  description: string;
-  unlocked: boolean;
-  cost: number;
-  powerLevel: number;      // 1 to 5
+  // 2. Side Shots (Flank blasters firing diagonally)
+  hasSideShots: boolean;
+  sideShotLevel: number;          // 1 to 2
+  maxSideShotLevel: number;
+  sideShotCost: number;
+
+  // 3. Rear Shots (Aft guns firing backwards)
+  hasRearShots: boolean;
+  rearShotLevel: number;          // 1 to 2
+  maxRearShotLevel: number;
+  rearShotCost: number;
+
+  // 4. Homing Missiles Pod (guided rockets)
+  hasHomingMissiles: boolean;
+  homingMissileLevel: number;     // 1 to 2
+  maxHomingMissileLevel: number;
+  homingMissileCost: number;
+
+  // 5. Piercing Laser Core (pierces multiple targets)
+  hasLaserBeam: boolean;
+  laserCost: number;
+
+  // 6. Global Power & Fire Rate Multipliers (Nashwan Power)
+  powerLevel: number;             // 1 to 5
   maxPowerLevel: number;
-  fireRateLevel: number;   // 1 to 5
-  maxFireRateLevel: number;
-  baseDamage: number;
-  baseFireIntervalMs: number; // e.g. 150ms
   powerUpgradeCost: number;
+
+  fireRateLevel: number;          // 1 to 5
+  maxFireRateLevel: number;
   fireRateUpgradeCost: number;
 }
 
@@ -33,7 +53,7 @@ export interface ShipStats {
   shieldUpgradeCost: number;
 
   // Generator
-  generatorPower: number;       // Energy output capacity / rate (e.g., 20 MW)
+  generatorPower: number;       // Energy output capacity / rate (MW)
   generatorLevel: number;
   maxGeneratorLevel: number;
   generatorUpgradeCost: number;
@@ -44,13 +64,12 @@ export interface ShipStats {
   maxShieldRechargeLevel: number;
   shieldRechargeUpgradeCost: number;
 
+  // Xenon 2 Additive Weapon Systems
+  weapons: XenonWeapons;
+
   // Drones / Wingmen
   hasWingman: boolean;
   wingmanCost: number;
-
-  // Weapons
-  currentWeapon: WeaponType;
-  weapons: Record<WeaponType, WeaponConfig>;
 
   // Economy & Score
   credits: number;
@@ -67,7 +86,7 @@ export interface EnemyConfig {
   speed: number;
   scoreValue: number;
   creditValue: number;
-  shootInterval: number; // ms
+  shootInterval: number;
   bulletSpeed: number;
   bulletDamage: number;
   pattern: 'straight' | 'sine' | 'dive' | 'strafe' | 'heavy_patrol';
@@ -80,7 +99,7 @@ export interface LevelConfig {
   subtitle: string;
   scrollSpeed: number;
   bgTheme: 'asteroid' | 'hive' | 'citadel';
-  durationSeconds: number; // time before boss spawns
+  durationSeconds: number;
   spawnIntervalMs: number;
   bossType: 'nautiloid' | 'giga_carapace' | 'megablast_omega';
   bossName: string;

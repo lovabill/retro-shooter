@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { ShipSystem } from '../systems/ShipSystem';
 import { SoundFX } from '../systems/SoundFX';
-import { WeaponType } from '../types/game';
 
 export class ShopScene extends Phaser.Scene {
   private shipSystem!: ShipSystem;
@@ -11,7 +10,7 @@ export class ShopScene extends Phaser.Scene {
   private creditsText!: Phaser.GameObjects.Text;
   private shipPreview!: Phaser.GameObjects.Sprite;
   private contentContainer!: Phaser.GameObjects.Container;
-  private currentTab: 'defense' | 'generator' | 'weapons' = 'defense';
+  private currentTab: 'weapons' | 'defense' | 'generator' = 'weapons';
 
   constructor() {
     super({ key: 'ShopScene' });
@@ -34,7 +33,7 @@ export class ShopScene extends Phaser.Scene {
     const topBar = this.add.rectangle(240, 24, 480, 48, 0x121724);
     topBar.setStrokeStyle(1, 0x24324d);
 
-    this.add.text(15, 12, 'TYRIAN ORBITAL HANGAR', {
+    this.add.text(15, 12, 'ALIEN EXCHANGE & HANGAR', {
       fontFamily: 'Courier New, monospace',
       fontSize: '14px',
       color: '#00f0ff',
@@ -48,7 +47,7 @@ export class ShopScene extends Phaser.Scene {
       fontStyle: 'bold'
     }).setOrigin(1, 0);
 
-    // Ship Status Box (Summary)
+    // Ship Status Box
     this.createShipStatusCard();
 
     // Tab Navigation Buttons
@@ -63,54 +62,54 @@ export class ShopScene extends Phaser.Scene {
   }
 
   private createShipStatusCard(): void {
-    const cardBg = this.add.rectangle(240, 92, 456, 76, 0x111622);
+    const cardBg = this.add.rectangle(240, 88, 456, 68, 0x111622);
     cardBg.setStrokeStyle(1, 0x223048);
 
-    // Ship Sprite Preview
-    this.shipPreview = this.add.sprite(50, 92, 'player_ship').setScale(1.6);
-    this.tweens.add({
-      targets: this.shipPreview,
-      scaleX: 1.68,
-      scaleY: 1.68,
-      duration: 1200,
-      yoyo: true,
-      repeat: -1
-    });
+    this.shipPreview = this.add.sprite(45, 88, 'player_ship').setScale(1.5);
 
-    // Stats Overview Grid
     const stats = this.shipSystem.stats;
-    const statsLines = [
-      `HULL: ${Math.ceil(stats.hull)}/${stats.maxHull} (Lv ${stats.hullLevel})`,
-      `SHIELD: ${Math.ceil(stats.shield)}/${stats.maxShield} (Lv ${stats.shieldLevel})`,
-      `REACTOR: ${stats.generatorPower} MW (${stats.generatorName})`,
-      `WEAPON: ${stats.weapons[stats.currentWeapon].name} [Pwr:${stats.weapons[stats.currentWeapon].powerLevel} Spd:${stats.weapons[stats.currentWeapon].fireRateLevel}]`
+    const w = stats.weapons;
+
+    const cannonNames = ['Single Pulse', 'Twin Cannons', 'Triple Plasma', 'Quad Megablast'];
+    const activeCannon = cannonNames[w.forwardCannonLevel - 1] || 'Cannons';
+
+    const mountedList: string[] = [activeCannon];
+    if (w.hasSideShots) mountedList.push(`Side(Lv${w.sideShotLevel})`);
+    if (w.hasRearShots) mountedList.push(`Rear(Lv${w.rearShotLevel})`);
+    if (w.hasHomingMissiles) mountedList.push(`Missiles(Lv${w.homingMissileLevel})`);
+    if (w.hasLaserBeam) mountedList.push('Laser');
+    if (stats.hasWingman) mountedList.push('Drones');
+
+    const lines = [
+      `HULL: ${Math.ceil(stats.hull)}/${stats.maxHull} | SHIELD: ${Math.ceil(stats.shield)}/${stats.maxShield} | GEN: ${stats.generatorPower}MW`,
+      `ALL WEAPONS FIRE SIMULTANEOUSLY:`,
+      `[ ${mountedList.join(' + ')} ]`
     ];
 
-    statsLines.forEach((text, i) => {
-      const col = i % 2;
-      const row = Math.floor(i / 2);
-      this.add.text(90 + col * 190, 72 + row * 22, text, {
+    lines.forEach((text, i) => {
+      this.add.text(80, 68 + i * 18, text, {
         fontFamily: 'Courier New, monospace',
-        fontSize: '10px',
-        color: '#b0c4de'
+        fontSize: i === 2 ? '9px' : '10px',
+        color: i === 2 ? '#00f0ff' : (i === 1 ? '#ffcc00' : '#b0c4de'),
+        fontStyle: i === 1 ? 'bold' : 'normal'
       });
     });
   }
 
   private createTabButtons(): void {
-    const tabs: { key: 'defense' | 'generator' | 'weapons'; label: string; x: number }[] = [
-      { key: 'defense', label: '1. DEFENSE', x: 90 },
-      { key: 'generator', label: '2. GENERATOR', x: 240 },
-      { key: 'weapons', label: '3. WEAPONS', x: 390 }
+    const tabs: { key: 'weapons' | 'defense' | 'generator'; label: string; x: number }[] = [
+      { key: 'weapons', label: '1. XENON WEAPONS', x: 95 },
+      { key: 'defense', label: '2. DEFENSE', x: 240 },
+      { key: 'generator', label: '3. REACTOR', x: 385 }
     ];
 
     tabs.forEach(tab => {
       const isSelected = this.currentTab === tab.key;
-      const btnBg = this.add.rectangle(tab.x, 150, 140, 28, isSelected ? 0x00f0ff : 0x161c28);
+      const btnBg = this.add.rectangle(tab.x, 142, 135, 26, isSelected ? 0x00f0ff : 0x161c28);
       btnBg.setStrokeStyle(1, 0x2a3a54);
-      const label = this.add.text(tab.x, 150, tab.label, {
+      const label = this.add.text(tab.x, 142, tab.label, {
         fontFamily: 'Courier New, monospace',
-        fontSize: '11px',
+        fontSize: '10px',
         color: isSelected ? '#000000' : '#ffffff',
         fontStyle: 'bold'
       }).setOrigin(0.5);
@@ -119,7 +118,7 @@ export class ShopScene extends Phaser.Scene {
       btnBg.on('pointerdown', () => {
         this.soundFX.playPickupCredit();
         this.currentTab = tab.key;
-        this.createTabButtons(); // re-render tabs
+        this.createTabButtons();
         this.renderCurrentTab();
       });
     });
@@ -129,16 +128,176 @@ export class ShopScene extends Phaser.Scene {
     this.contentContainer.removeAll(true);
     this.creditsText.setText(`¢ ${this.shipSystem.stats.credits}`);
 
-    if (this.currentTab === 'defense') {
+    if (this.currentTab === 'weapons') {
+      this.renderXenonWeaponsTab();
+    } else if (this.currentTab === 'defense') {
       this.renderDefenseTab();
-    } else if (this.currentTab === 'generator') {
-      this.renderGeneratorTab();
     } else {
-      this.renderWeaponsTab();
+      this.renderGeneratorTab();
     }
   }
 
-  // --- TAB 1: DEFENSE (Hull & Shield) ---
+  // --- TAB 1: XENON 2 ADDITIVE WEAPONRY ---
+  private renderXenonWeaponsTab(): void {
+    const stats = this.shipSystem.stats;
+    const w = stats.weapons;
+    let y = 180;
+
+    // 1. Forward Cannons (Single -> Twin -> Triple -> Quad Megablast)
+    const forwardCost = w.forwardCannonCost * w.forwardCannonLevel;
+    const isForwardMax = w.forwardCannonLevel >= w.maxForwardCannonLevel;
+    const forwardNames = [
+      'Twin Forward Cannons (+Dual Barrels)',
+      'Triple Plasma Cannons (+Wide Arc)',
+      'Quad Megablast Heavy Cannons (+Maximum Firepower)'
+    ];
+    const forwardDesc = isForwardMax
+      ? 'Maximum forward cannon tier installed.'
+      : forwardNames[w.forwardCannonLevel - 1];
+
+    this.createShopItemRow(
+      y,
+      `FORWARD CANNONS (Tier ${w.forwardCannonLevel}/${w.maxForwardCannonLevel})`,
+      forwardDesc,
+      isForwardMax ? 'MAX TIER' : `¢ ${forwardCost}`,
+      !isForwardMax && stats.credits >= forwardCost,
+      () => {
+        if (this.shipSystem.upgradeForwardCannons()) {
+          this.soundFX.playShopBuy();
+          this.refreshAll();
+        }
+      }
+    );
+    y += 56;
+
+    // 2. Side Shots (Flank Cannons)
+    const sideCost = !w.hasSideShots ? w.sideShotCost : Math.round(w.sideShotCost * 0.9);
+    const isSideMax = w.hasSideShots && w.sideShotLevel >= w.maxSideShotLevel;
+    const sideLabel = !w.hasSideShots
+      ? 'MOUNT SIDE SHOTS'
+      : `UPGRADE SIDE SHOTS (Lv ${w.sideShotLevel}/${w.maxSideShotLevel})`;
+    const sideDesc = !w.hasSideShots
+      ? 'Fires diagonal flank blasters left & right (-45° / -135°)'
+      : 'Adds secondary wide-spread diagonal angle';
+
+    this.createShopItemRow(
+      y,
+      sideLabel,
+      sideDesc,
+      isSideMax ? 'INSTALLED' : `¢ ${sideCost}`,
+      !isSideMax && stats.credits >= sideCost,
+      () => {
+        if (this.shipSystem.buyOrUpgradeSideShots()) {
+          this.soundFX.playShopBuy();
+          this.refreshAll();
+        }
+      }
+    );
+    y += 56;
+
+    // 3. Rear Shots (Aft Blaster)
+    const rearCost = !w.hasRearShots ? w.rearShotCost : Math.round(w.rearShotCost * 0.9);
+    const isRearMax = w.hasRearShots && w.rearShotLevel >= w.maxRearShotLevel;
+    const rearLabel = !w.hasRearShots
+      ? 'MOUNT REAR SHOTS'
+      : `UPGRADE REAR SHOTS (Lv ${w.rearShotLevel}/${w.maxRearShotLevel})`;
+    const rearDesc = !w.hasRearShots
+      ? 'Fires blasters directly backwards to kill enemies behind you'
+      : 'Upgrades to dual heavy rear blasters';
+
+    this.createShopItemRow(
+      y,
+      rearLabel,
+      rearDesc,
+      isRearMax ? 'INSTALLED' : `¢ ${rearCost}`,
+      !isRearMax && stats.credits >= rearCost,
+      () => {
+        if (this.shipSystem.buyOrUpgradeRearShots()) {
+          this.soundFX.playShopBuy();
+          this.refreshAll();
+        }
+      }
+    );
+    y += 56;
+
+    // 4. Homing Missiles Pod
+    const missileCost = !w.hasHomingMissiles ? w.homingMissileCost : Math.round(w.homingMissileCost * 0.9);
+    const isMissileMax = w.hasHomingMissiles && w.homingMissileLevel >= w.maxHomingMissileLevel;
+    const missileLabel = !w.hasHomingMissiles
+      ? 'MOUNT HOMING MISSILES'
+      : `UPGRADE MISSILE PODS (Lv ${w.homingMissileLevel}/${w.maxHomingMissileLevel})`;
+    const missileDesc = !w.hasHomingMissiles
+      ? 'Fires guided heat-seeking micro-missiles that hunt targets'
+      : 'Doubles homing missile salvo per volley';
+
+    this.createShopItemRow(
+      y,
+      missileLabel,
+      missileDesc,
+      isMissileMax ? 'INSTALLED' : `¢ ${missileCost}`,
+      !isMissileMax && stats.credits >= missileCost,
+      () => {
+        if (this.shipSystem.buyOrUpgradeHomingMissiles()) {
+          this.soundFX.playShopBuy();
+          this.refreshAll();
+        }
+      }
+    );
+    y += 56;
+
+    // 5. Piercing Laser Beam
+    this.createShopItemRow(
+      y,
+      'MOUNT HIGH-ENERGY LASER',
+      'High-power forward beam cutting through multiple enemy lines',
+      w.hasLaserBeam ? 'INSTALLED' : `¢ ${w.laserCost}`,
+      !w.hasLaserBeam && stats.credits >= w.laserCost,
+      () => {
+        if (this.shipSystem.buyLaserBeam()) {
+          this.soundFX.playShopBuy();
+          this.refreshAll();
+        }
+      }
+    );
+    y += 56;
+
+    // 6. Global Power Booster (Nashwan Power)
+    const pCost = w.powerUpgradeCost * w.powerLevel;
+    const isPMax = w.powerLevel >= w.maxPowerLevel;
+    this.createShopItemRow(
+      y,
+      `NASHWAN POWER BOOST (Lv ${w.powerLevel}/${w.maxPowerLevel})`,
+      `Overcharges damage of ALL mounted weapons (+28% per level)`,
+      isPMax ? 'MAX POWER' : `¢ ${pCost}`,
+      !isPMax && stats.credits >= pCost,
+      () => {
+        if (this.shipSystem.upgradeWeaponPower()) {
+          this.soundFX.playShopBuy();
+          this.refreshAll();
+        }
+      }
+    );
+    y += 56;
+
+    // 7. Global Fire Rate Supercharger
+    const spdCost = w.fireRateUpgradeCost * w.fireRateLevel;
+    const isSpdMax = w.fireRateLevel >= w.maxFireRateLevel;
+    this.createShopItemRow(
+      y,
+      `RAPID FIRE SUPERCHARGER (Lv ${w.fireRateLevel}/${w.maxFireRateLevel})`,
+      `Accelerates cycling rate of ALL weapons simultaneously`,
+      isSpdMax ? 'MAX SPEED' : `¢ ${spdCost}`,
+      !isSpdMax && stats.credits >= spdCost,
+      () => {
+        if (this.shipSystem.upgradeWeaponFireRate()) {
+          this.soundFX.playShopBuy();
+          this.refreshAll();
+        }
+      }
+    );
+  }
+
+  // --- TAB 2: DEFENSE ---
   private renderDefenseTab(): void {
     const stats = this.shipSystem.stats;
     let y = 195;
@@ -215,7 +374,7 @@ export class ShopScene extends Phaser.Scene {
     );
   }
 
-  // --- TAB 2: GENERATOR (Reactor Core) ---
+  // --- TAB 3: GENERATOR & AUXILIARY ---
   private renderGeneratorTab(): void {
     const stats = this.shipSystem.stats;
     let y = 205;
@@ -223,7 +382,6 @@ export class ShopScene extends Phaser.Scene {
     const genCost = stats.generatorUpgradeCost * stats.generatorLevel;
     const isGenMax = stats.generatorLevel >= stats.maxGeneratorLevel;
 
-    // Big Generator Info Card
     const infoBox = this.add.rectangle(240, y + 25, 456, 75, 0x161e2e);
     infoBox.setStrokeStyle(1, 0x00e5ff);
     const infoTitle = this.add.text(240, y, `REACTOR CORE: ${stats.generatorName.toUpperCase()}`, {
@@ -264,7 +422,7 @@ export class ShopScene extends Phaser.Scene {
     );
     y += 85;
 
-    // Wingman Auxiliary Drone
+    // Wingmen Escorts
     const hasWingman = stats.hasWingman;
     this.createShopItemRow(
       y,
@@ -281,87 +439,6 @@ export class ShopScene extends Phaser.Scene {
     );
   }
 
-  // --- TAB 3: WEAPONS ---
-  private renderWeaponsTab(): void {
-    const stats = this.shipSystem.stats;
-    const weaponKeys: WeaponType[] = ['PULSE_CANNON', 'WAVE_SPREADER', 'HEAVY_PLASMA', 'HOMING_SWARM'];
-    let y = 190;
-
-    weaponKeys.forEach(key => {
-      const w = stats.weapons[key];
-      const isEquipped = stats.currentWeapon === key;
-
-      const rowBg = this.add.rectangle(240, y + 20, 456, 52, isEquipped ? 0x14283d : 0x111622);
-      rowBg.setStrokeStyle(1, isEquipped ? 0x00f0ff : 0x243248);
-
-      const title = this.add.text(25, y - 2, `${w.name.toUpperCase()} ${isEquipped ? '[ACTIVE]' : ''}`, {
-        fontFamily: 'Courier New, monospace',
-        fontSize: '11px',
-        color: isEquipped ? '#00f0ff' : '#ffffff',
-        fontStyle: 'bold'
-      });
-
-      const desc = this.add.text(25, y + 14, w.description, {
-        fontFamily: 'Courier New, monospace',
-        fontSize: '9px',
-        color: '#8faac8'
-      });
-
-      const statsInfo = this.add.text(25, y + 28, `Dmg: ${Math.round(w.baseDamage * (1 + (w.powerLevel - 1) * 0.35))} | Pwr: Lv${w.powerLevel} | Spd: Lv${w.fireRateLevel}`, {
-        fontFamily: 'Courier New, monospace',
-        fontSize: '9px',
-        color: '#ffaa00'
-      });
-
-      this.contentContainer.add([rowBg, title, desc, statsInfo]);
-
-      if (!w.unlocked) {
-        // Unlock button
-        const canAfford = stats.credits >= w.cost;
-        const buyBtn = this.createActionButton(405, y + 20, `¢ ${w.cost}`, canAfford, () => {
-          if (this.shipSystem.unlockWeapon(key)) {
-            this.soundFX.playShopBuy();
-            this.refreshAll();
-          }
-        });
-        this.contentContainer.add(buyBtn);
-      } else {
-        // Equip button if not active
-        if (!isEquipped) {
-          const equipBtn = this.createActionButton(405, y + 20, 'EQUIP', true, () => {
-            this.shipSystem.switchWeapon(key);
-            this.soundFX.playPickupCredit();
-            this.refreshAll();
-          });
-          this.contentContainer.add(equipBtn);
-        } else {
-          // Upgrade buttons for active weapon
-          const pCost = w.powerUpgradeCost * w.powerLevel;
-          const isPMax = w.powerLevel >= w.maxPowerLevel;
-          const pBtn = this.createSmallButton(345, y + 20, isPMax ? 'PWR MAX' : `+PWR ¢${pCost}`, !isPMax && stats.credits >= pCost, () => {
-            if (this.shipSystem.upgradeWeaponPower(key)) {
-              this.soundFX.playShopBuy();
-              this.refreshAll();
-            }
-          });
-
-          const spdCost = w.fireRateUpgradeCost * w.fireRateLevel;
-          const isSpdMax = w.fireRateLevel >= w.maxFireRateLevel;
-          const spdBtn = this.createSmallButton(420, y + 20, isSpdMax ? 'SPD MAX' : `+SPD ¢${spdCost}`, !isSpdMax && stats.credits >= spdCost, () => {
-            if (this.shipSystem.upgradeWeaponFireRate(key)) {
-              this.soundFX.playShopBuy();
-              this.refreshAll();
-            }
-          });
-
-          this.contentContainer.add([pBtn, spdBtn]);
-        }
-      }
-
-      y += 62;
-    });
-  }
-
   private createShopItemRow(
     y: number,
     titleText: string,
@@ -370,30 +447,30 @@ export class ShopScene extends Phaser.Scene {
     canBuy: boolean,
     callback: () => void
   ): void {
-    const rowBg = this.add.rectangle(240, y + 20, 456, 56, 0x111622);
+    const rowBg = this.add.rectangle(240, y + 16, 456, 48, 0x111622);
     rowBg.setStrokeStyle(1, 0x243248);
 
-    const title = this.add.text(25, y, titleText, {
+    const title = this.add.text(25, y - 2, titleText, {
       fontFamily: 'Courier New, monospace',
       fontSize: '11px',
       color: '#ffffff',
       fontStyle: 'bold'
     });
 
-    const desc = this.add.text(25, y + 18, descText, {
+    const desc = this.add.text(25, y + 14, descText, {
       fontFamily: 'Courier New, monospace',
       fontSize: '9px',
       color: '#8faac8'
     });
 
-    const btn = this.createActionButton(405, y + 20, actionLabel, canBuy, callback);
+    const btn = this.createActionButton(405, y + 16, actionLabel, canBuy, callback);
 
     this.contentContainer.add([rowBg, title, desc, btn]);
   }
 
   private createActionButton(x: number, y: number, text: string, enabled: boolean, callback: () => void): Phaser.GameObjects.Container {
     const btn = this.add.container(x, y);
-    const bg = this.add.rectangle(0, 0, 95, 30, enabled ? 0x00f0ff : 0x1b2230);
+    const bg = this.add.rectangle(0, 0, 95, 26, enabled ? 0x00f0ff : 0x1b2230);
     bg.setStrokeStyle(1, enabled ? 0x00c8d7 : 0x334455);
     const label = this.add.text(0, 0, text, {
       fontFamily: 'Courier New, monospace',
@@ -414,37 +491,14 @@ export class ShopScene extends Phaser.Scene {
     return btn;
   }
 
-  private createSmallButton(x: number, y: number, text: string, enabled: boolean, callback: () => void): Phaser.GameObjects.Container {
-    const btn = this.add.container(x, y);
-    const bg = this.add.rectangle(0, 0, 68, 28, enabled ? 0xffaa00 : 0x1b2230);
-    bg.setStrokeStyle(1, enabled ? 0xffcc44 : 0x334455);
-    const label = this.add.text(0, 0, text, {
-      fontFamily: 'Courier New, monospace',
-      fontSize: '8px',
-      color: enabled ? '#000000' : '#667788',
-      fontStyle: 'bold'
-    }).setOrigin(0.5);
-
-    btn.add([bg, label]);
-
-    if (enabled) {
-      bg.setInteractive({ useHandCursor: true });
-      bg.on('pointerdown', callback);
-      bg.on('pointerover', () => bg.setFillStyle(0xffc244));
-      bg.on('pointerout', () => bg.setFillStyle(0xffaa00));
-    }
-
-    return btn;
-  }
-
   private createLaunchButton(): void {
-    const launchContainer = this.add.container(240, 595);
-    const bg = this.add.rectangle(0, 0, 456, 44, 0x1a3328);
+    const launchContainer = this.add.container(240, 600);
+    const bg = this.add.rectangle(0, 0, 456, 40, 0x1a3328);
     bg.setStrokeStyle(2, 0x00e676);
 
     const txt = this.add.text(0, 0, `LAUNCH MISSION: SECTOR ${this.nextLevel} »`, {
       fontFamily: 'Courier New, monospace',
-      fontSize: '14px',
+      fontSize: '13px',
       color: '#00e676',
       fontStyle: 'bold'
     }).setOrigin(0.5);
@@ -460,15 +514,6 @@ export class ShopScene extends Phaser.Scene {
     bg.on('pointerout', () => {
       bg.setFillStyle(0x1a3328);
       txt.setColor('#00e676');
-    });
-
-    this.tweens.add({
-      targets: txt,
-      scaleX: 1.05,
-      scaleY: 1.05,
-      duration: 700,
-      yoyo: true,
-      repeat: -1
     });
 
     if (this.input.keyboard) {

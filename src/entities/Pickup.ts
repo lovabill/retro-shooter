@@ -7,9 +7,9 @@ export class Pickup extends Phaser.Physics.Arcade.Sprite {
   public creditValue: number = 10;
   public scoreValue: number = 50;
   public repairAmount: number = 0;
-  private magnetRange: number = 110;
-  private magnetSpeed: number = 260;
-  private baseVy: number = 65;
+  private magnetRange: number = 145;
+  private magnetSpeed: number = 320;
+  private baseVy: number = 55;
 
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
     super(scene, x, y, texture);

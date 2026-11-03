@@ -443,7 +443,7 @@ export class TextureGenerator {
       ctx.fillRect(2, 4, 2, 6);
     });
 
-    // B) Wave spreader (20x10)
+    // B) Wave spreader / Side shot (20x10)
     createCanvas('proj_wave', 20, 10, (ctx, w, h) => {
       ctx.fillStyle = 'rgba(0, 240, 255, 0.4)';
       ctx.beginPath();
@@ -455,6 +455,36 @@ export class TextureGenerator {
       ctx.lineWidth = 2;
       ctx.strokeStyle = '#ffffff';
       ctx.stroke();
+    });
+
+    // B2) Piercing Laser Beam (8x26)
+    createCanvas('proj_laser', 8, 26, (ctx, w, h) => {
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.4)';
+      ctx.fillRect(0, 0, 8, 26);
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillRect(2, 1, 4, 24);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(3, 3, 2, 20);
+    });
+
+    // B3) Flank / Side Dart (8x10)
+    createCanvas('proj_side', 8, 10, (ctx, w, h) => {
+      ctx.fillStyle = '#00e5ff';
+      ctx.beginPath();
+      ctx.moveTo(4, 0); ctx.lineTo(8, 8); ctx.lineTo(4, 6); ctx.lineTo(0, 8); ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(3, 2, 2, 4);
+    });
+
+    // B4) Rear Blaster Tracer (6x12)
+    createCanvas('proj_rear', 6, 12, (ctx, w, h) => {
+      ctx.fillStyle = '#ff3366';
+      ctx.fillRect(0, 0, 6, 12);
+      ctx.fillStyle = '#ff99aa';
+      ctx.fillRect(1, 2, 4, 8);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(2, 4, 2, 4);
     });
 
     // C) Heavy Plasma (16x16)

@@ -1,5 +1,3 @@
-import { WeaponType } from '../types/game';
-
 export class SoundFX {
   private static instance: SoundFX;
   private ctx: AudioContext | null = null;
@@ -57,60 +55,118 @@ export class SoundFX {
     return this.isMuted;
   }
 
-  public playShoot(type: WeaponType): void {
-    this.init();
-    if (!this.ctx || !this.sfxGain || this.isMuted) return;
-    this.resume();
+  public playLaser(): void {
+    try {
+      this.init();
+      if (!this.ctx || !this.sfxGain || this.isMuted) return;
+      this.resume();
 
-    const t = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
 
-    osc.connect(gain);
-    gain.connect(this.sfxGain);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(880, t);
+      osc.frequency.linearRampToValueAtTime(1400, t + 0.12);
 
-    switch (type) {
-      case 'PULSE_CANNON': {
+      gain.gain.setValueAtTime(0.2, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+
+      osc.start(t);
+      osc.stop(t + 0.14);
+    } catch {
+      // Audio fallback
+    }
+  }
+
+  public playSideShot(): void {
+    try {
+      this.init();
+      if (!this.ctx || !this.sfxGain || this.isMuted) return;
+      this.resume();
+
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(620, t);
+      osc.frequency.exponentialRampToValueAtTime(180, t + 0.08);
+
+      gain.gain.setValueAtTime(0.18, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+
+      osc.start(t);
+      osc.stop(t + 0.08);
+    } catch {
+      // Audio fallback
+    }
+  }
+
+  public playMissileLaunch(): void {
+    try {
+      this.init();
+      if (!this.ctx || !this.sfxGain || this.isMuted) return;
+      this.resume();
+
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(260, t);
+      osc.frequency.linearRampToValueAtTime(580, t + 0.12);
+
+      gain.gain.setValueAtTime(0.18, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+
+      osc.start(t);
+      osc.stop(t + 0.14);
+    } catch {
+      // Audio fallback
+    }
+  }
+  public playShoot(type: string = 'pulse'): void {
+    try {
+      this.init();
+      if (!this.ctx || !this.sfxGain || this.isMuted) return;
+      this.resume();
+
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+
+      if (type === 'heavy') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(320, t);
+        osc.frequency.exponentialRampToValueAtTime(60, t + 0.18);
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        osc.start(t);
+        osc.stop(t + 0.18);
+      } else {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(740, t);
         osc.frequency.exponentialRampToValueAtTime(120, t + 0.1);
-        gain.gain.setValueAtTime(0.25, t);
+        gain.gain.setValueAtTime(0.24, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
         osc.start(t);
         osc.stop(t + 0.1);
-        break;
       }
-      case 'WAVE_SPREADER': {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(520, t);
-        osc.frequency.exponentialRampToValueAtTime(220, t + 0.14);
-        gain.gain.setValueAtTime(0.28, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
-        osc.start(t);
-        osc.stop(t + 0.14);
-        break;
-      }
-      case 'HEAVY_PLASMA': {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(240, t);
-        osc.frequency.exponentialRampToValueAtTime(45, t + 0.22);
-        gain.gain.setValueAtTime(0.35, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
-        osc.start(t);
-        osc.stop(t + 0.22);
-        break;
-      }
-      case 'HOMING_SWARM': {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(400, t);
-        osc.frequency.linearRampToValueAtTime(800, t + 0.08);
-        osc.frequency.exponentialRampToValueAtTime(180, t + 0.16);
-        gain.gain.setValueAtTime(0.22, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
-        osc.start(t);
-        osc.stop(t + 0.16);
-        break;
-      }
+    } catch {
+      // Audio fallback
     }
   }
 

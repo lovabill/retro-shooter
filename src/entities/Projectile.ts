@@ -1,13 +1,14 @@
 import Phaser from 'phaser';
-import { WeaponType } from '../types/game';
 
 export class Projectile extends Phaser.Physics.Arcade.Sprite {
   public damage: number = 20;
   public isPlayerBullet: boolean = true;
   public homing: boolean = false;
+  public piercing: boolean = false;
+  public pierceCount: number = 2;
   public homingTarget: Phaser.GameObjects.GameObject | null = null;
   public homingSpeed: number = 320;
-  public weaponType: WeaponType | null = null;
+  public weaponType: string | null = null;
 
   constructor(scene: Phaser.Scene, x: number, y: number, texture: string) {
     super(scene, x, y, texture);
@@ -23,7 +24,8 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
     damage: number,
     isPlayer: boolean,
     homing: boolean = false,
-    weaponType: WeaponType | null = null
+    piercing: boolean = false,
+    weaponType: string | null = null
   ): void {
     this.setPosition(x, y);
     this.setActive(true);
@@ -33,6 +35,8 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
     this.damage = damage;
     this.isPlayerBullet = isPlayer;
     this.homing = homing;
+    this.piercing = piercing;
+    this.pierceCount = piercing ? 3 : 0;
     this.weaponType = weaponType;
     this.homingTarget = null;
 
